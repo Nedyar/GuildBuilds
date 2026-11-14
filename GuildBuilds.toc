@@ -1,0 +1,42 @@
+## Interface: 16001
+## Title: Guild Builds
+## Notes: Shows your guild members' builds in the guild roster: their talent specializations, opened in the game's talent window, and the gear sets that go with them. Also ties your gear sets to your talents.
+## Notes-deDE: Zeigt die Builds der Mitglieder deiner Gilde in der Gildenliste: ihre Talentspezialisierungen, die sich im Talentfenster des Spiels öffnen, und die passenden Ausrüstungssets. Verknüpft außerdem deine Ausrüstungssets mit deinen Talenten.
+## Notes-esES: Muestra las builds de los miembros de tu hermandad en la lista de la hermandad: sus especializaciones de talentos, que se abren en la ventana de talentos del juego, y los conjuntos de equipamiento que las acompañan. También asocia tus conjuntos de equipamiento a tus talentos.
+## Notes-esMX: Muestra las builds de los miembros de tu hermandad en la lista de la hermandad: sus especializaciones de talentos, que se abren en la ventana de talentos del juego, y los conjuntos de equipamiento que las acompañan. También asocia tus conjuntos de equipamiento a tus talentos.
+## Notes-frFR: Affiche les builds des membres de votre guilde dans la liste de guilde : leurs spécialisations de talents, ouvertes dans la fenêtre des talents du jeu, et les ensembles d'équipement qui les accompagnent. Associe aussi vos ensembles d'équipement à vos talents.
+## Notes-itIT: Mostra le build dei membri della tua gilda nell'elenco della gilda: le loro specializzazioni dei talenti, aperte nella finestra dei talenti del gioco, e i set di equipaggiamento che le accompagnano. Associa anche i tuoi set di equipaggiamento ai tuoi talenti.
+## Notes-koKR: 길드 목록에 길드원의 빌드를 표시합니다. 게임의 특성 창에서 열리는 특성 전문화와 그에 맞는 장비 구성을 볼 수 있습니다. 내 장비 구성을 내 특성에 연결할 수도 있습니다.
+## Notes-ptBR: Mostra as builds dos membros da sua guilda na lista da guilda: suas especializações de talentos, abertas na janela de talentos do jogo, e os conjuntos de equipamentos que as acompanham. Também associa seus conjuntos de equipamentos aos seus talentos.
+## Notes-ruRU: Показывает билды членов вашей гильдии в списке гильдии: их специализации талантов, открываемые в окне талантов игры, и подходящие к ним комплекты экипировки. Также связывает ваши комплекты экипировки с вашими талантами.
+## Notes-zhCN: 在公会名单中显示公会成员的配置：他们的天赋专精（在游戏的天赋窗口中打开）以及与之搭配的装备方案。还可以将你的装备方案与天赋关联。
+## Notes-zhTW: 在公會名單中顯示公會成員的配置：他們的天賦專精（在遊戲的天賦視窗中開啟）以及與之搭配的裝備設定。還可以將你的裝備設定與天賦關聯。
+## Author: Nedyar
+## Version: 0.1.0
+## Dependencies: LibGuildSync
+## SavedVariables: GuildBuildsDB
+## IconTexture: Interface\Icons\INV_Misc_Book_11
+
+Locales\Locales.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\esMX.lua
+Locales\frFR.lua
+Locales\itIT.lua
+Locales\koKR.lua
+Locales\ptBR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
+
+Core.lua
+Pack.lua
+Data.lua
+Talents.lua
+Sets.lua
+TitleButton.lua
+GearPanel.lua
+Viewer.lua
+ShareBox.lua
+GearManager.lua
+RosterColumn.lua
