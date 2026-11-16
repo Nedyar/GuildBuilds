@@ -40,6 +40,13 @@ them. It also ties your own gear sets to your talents.
   their points in the roster, as anyone sees by inspecting you, but never
   leave your computer; taking something back removes it from the guild's
   copies too.
+- **The gear you wear.** While the talents in use share their gear, what
+  you wear is shared too (each item with its item level, and your average
+  item level), together with the points you have not spent yet. In the
+  gear panel of those talents it comes last, as "Equipped" (with the
+  average item level), also for a build without gear sets. Other addons
+  can read it from the guild's records too, such as the exporter for the
+  guild's Discord bot.
 - **Room for the icons.** The Class column gets just wide enough for the
   class icon and two more, and the Note column, the one that stretches,
   gives up that room; the other columns keep their width.
@@ -80,6 +87,24 @@ the `LibGuildSync` folder next to it (its test harness is shared):
 ```
 lua5.1 Tests\run.lua . Tests
 ```
+
+`test_versions` runs the last release next to this version, taken from its
+git tag.
+
+## Releasing
+
+CurseForge packages every tagged commit pushed here.
+
+1. Raise `## Version` in `GuildBuilds.toc` and add that version's entry at
+   the top of `CHANGELOG.md`. The tests check that both match. If
+   `ANNOUNCE_AS` is set in `Core.lua` (a version tried in game while telling
+   the guild it is the last release), set it to nil. The tests print a note
+   while it is on.
+2. Commit, tag the commit `v<version>` and push the tag:
+   `git push origin v<version>`. A tag containing `beta` or `alpha` makes a
+   beta or alpha file instead of a release.
+3. CurseForge builds the zip as `.pkgmeta` says: the `GuildBuilds` folder
+   without the tests, with `CHANGELOG.md` as the file's changelog.
 
 ## License
 

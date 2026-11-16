@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 - The gear you wear
+
+- **The gear you wear goes with your talents**: while the talents in use share their gear ("Share gear" at the bottom of the talent window), what you wear is shared too, with its item levels and your average item level. Untick the box of the talents in use and it is taken back from the guild's copies, as with the gear sets.
+- **"Equipped" in the gear panel**: beside a member's talents in use, after their gear sets, what they wear, with their average item level. A build without gear sets shows it too, so its gear opens from the roster and from the talent window's gear button. Other addons, such as the guild's Discord bot exporter, can read it as well.
+- **Points not spent yet** are shared with the talents.
+- Members on 0.1 keep sharing builds with this version, and skip what 0.2 adds.
+
 ## 0.1.0 - First release
 
 - **Specializations in the guild roster**: in the Class column, next to each member's class, one icon per spec group (two with dual spec), Primary then Secondary, the one not active dimmed. The icon is the talent tree with the most points. Point at it for the tree, the points in each tree, its gear sets and when it was last updated.

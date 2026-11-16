@@ -20,6 +20,15 @@ Lib.Attach(ns, {
     savedVariable = "GuildBuildsDB",
 })
 
+-- While a version that keeps the protocol is tried in game before its
+-- release, it tells the guild it runs the last release (ANNOUNCE_AS): it
+-- keeps sharing with the members on it, who are not told to update to a
+-- version they cannot get yet. Set it to nil for the release.
+local ANNOUNCE_AS = nil
+if ANNOUNCE_AS then
+    ns.VERSION_NUM = Lib.VersionNumber(ANNOUNCE_AS)
+end
+
 -- Our own builds have been read, so what we announce is current.
 function ns.Sync.OwnReady()
     return ns.Talents.ready
@@ -52,7 +61,7 @@ events:SetScript("OnEvent", function(self, event, name)
         -- Each part starts on its own, so a failure in one (reported as a normal
         -- Lua error) does not stop the others.
         local parts = {
-            ns.Talents.Init, ns.Sets.Init, ns.Viewer.Init, ns.GearPanel.Init,
+            ns.Talents.Init, ns.Sets.Init, ns.Equipped.Init, ns.Viewer.Init, ns.GearPanel.Init,
             ns.ShareBox.Init, ns.GearManager.Init, ns.RosterColumn.Init,
         }
         for _, init in ipairs(parts) do

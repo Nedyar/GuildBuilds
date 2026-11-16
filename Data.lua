@@ -100,26 +100,54 @@ local function CleanSpecs(specs)
     return clean
 end
 
+-- The items worn, by slot, or nil when unusable.
+local function CleanWorn(items)
+    if type(items) ~= "table" or #items > LIMITS.slot then
+        return nil
+    end
+    local clean, slots = {}, {}
+    for i, item in ipairs(items) do
+        if type(item) ~= "table" or not Lib.IsCount(item.s, LIMITS.slot) or item.s < 1 or slots[item.s]
+            or not Data.IsItem(item.i) or not Lib.IsCount(item.il or 0, LIMITS.itemLevel) then
+            return nil
+        end
+        slots[item.s] = true
+        clean[i] = { s = item.s, i = item.i, il = item.il or 0 }
+    end
+    return clean
+end
+
 -- A checked copy of a record, or nil when it cannot be trusted. Talents
--- come all together or not at all.
+-- come all together or not at all; the items worn too.
 function Data.CleanRecord(record, now)
     local clean = Data.CleanBase(record, now)
     if not clean then
         return nil
+    end
+    if record.w ~= nil then
+        local worn = CleanWorn(record.w)
+        if not worn or (record.il ~= nil and not Lib.IsCount(record.il, LIMITS.itemLevel * 100)) then
+            return nil
+        end
+        clean.w, clean.il = worn, record.il
     end
     if record.s == nil then
         return clean
     end
     local tabs, specs = CleanTabs(record.tb), CleanSpecs(record.s)
     if not tabs or not specs or not Lib.IsCount(record.lv, LIMITS.level) or record.lv < 1
-        or not Lib.IsID(record.tr) or (record.ag ~= 1 and record.ag ~= 2) then
+        or not Lib.IsID(record.tr) or (record.ag ~= 1 and record.ag ~= 2)
+        or (record.un ~= nil and not Lib.IsCount(record.un, LIMITS.points)) then
         return nil
     end
     clean.lv, clean.tr, clean.ag, clean.tb, clean.s = record.lv, record.tr, record.ag, tabs, specs
+    clean.un = record.un
     return clean
 end
 
-local TALENT_FIELDS = { "lv", "tr", "ag", "tb", "s" }
+-- The items worn are not among them: a newer copy without them means
+-- their owner stopped sharing them.
+local TALENT_FIELDS = { "lv", "tr", "ag", "tb", "s", "un" }
 
 -- A copy kept without talents takes them from the other copy.
 function Data.CarryMissing(kept, other)
@@ -173,4 +201,23 @@ function Data.BuildOf(record, group)
             return spec
         end
     end
+end
+
+-- The gear a member's build shows: its sets, the default one first, then
+-- what its owner wears, while it is their active build and they share it,
+-- as one more: { worn = true, i = 0, it = the items worn, il = the average
+-- item level }. Empty when there is none.
+function Data.GearOf(record, group)
+    local build = Data.BuildOf(record, group)
+    local gear = {}
+    if not build then
+        return gear
+    end
+    for _, set in ipairs(build.q or {}) do
+        gear[#gear + 1] = set
+    end
+    if record.w and #record.w > 0 and record.ag == group then
+        gear[#gear + 1] = { worn = true, i = 0, it = record.w, il = record.il }
+    end
+    return gear
 end

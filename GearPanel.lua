@@ -36,6 +36,7 @@ local SLOT_NAMES = {
     "TRINKET1SLOT", "BACKSLOT", "MAINHANDSLOT", "SECONDARYHANDSLOT", "RANGEDSLOT", "TABARDSLOT",
 }
 local MIN_QUALITY = 2   -- uncommon and better show their quality's border
+local WORN_ICON = "Interface\\Icons\\INV_Chest_Chain_05"  -- for what the member wears
 local TITLE_INSET = 58  -- from each side to the title, when it cannot be measured
 local TITLE_GAP = 2     -- between the title and the talents button
 local QUESTION_MARK = 134400
@@ -57,6 +58,24 @@ local function BuildShown()
     local guild = ns.Data.CurrentGuild(false)
     local record = guild and guild.members[current.guid]
     return ns.Data.BuildOf(record, current.gr), record
+end
+
+-- The gear of the build shown (Data.GearOf).
+local function GearShown()
+    local current = GearPanel.current
+    local guild = current and ns.Data.CurrentGuild(false)
+    return ns.Data.GearOf(guild and guild.members[current.guid], current and current.gr)
+end
+
+-- A set's name, or "Equipped" for what the member wears.
+local function SetLabel(set, index)
+    if set.worn then
+        if set.il and set.il > 0 then
+            return L["Equipped (item level %s)"]:format(("%.1f"):format(set.il / 100))
+        end
+        return L["Equipped"]
+    end
+    return index == 1 and L["%s (default)"]:format(set.n) or set.n
 end
 
 -- Slots -------------------------------------------------------------------------------
@@ -131,10 +150,8 @@ end
 -- The panel ----------------------------------------------------------------------------
 
 local function SetMenu(owner, root)
-    local build = BuildShown()
-    for index, set in ipairs(build and build.q or {}) do
-        local text = index == 1 and L["%s (default)"]:format(set.n) or set.n
-        root:CreateRadio(text, function()
+    for index, set in ipairs(GearShown()) do
+        root:CreateRadio(SetLabel(set, index), function()
             return GearPanel.current and GearPanel.current.index == index
         end, function()
             if GearPanel.current then
@@ -318,27 +335,28 @@ end
 -- Draws the set shown again (the record may have changed).
 function GearPanel.Refresh()
     local build, record = BuildShown()
-    if not (build and build.q) then
+    local gear = GearShown()
+    if not build or #gear == 0 then
         GearPanel.Hide()
         return
     end
     local current = GearPanel.current
-    current.index = math.min(math.max(current.index or 1, 1), #build.q)
-    local set = build.q[current.index]
+    current.index = math.min(math.max(current.index or 1, 1), #gear)
+    local set = gear[current.index]
     local name = ns.Data.NameOf(current.guid, record)
     if #record.s > 1 then
         name = ("%s (%s)"):format(name, ns.GroupLabel(current.gr))
     end
     panel:SetTitle(L["Gear of %s"]:format(name))
-    local several = #build.q > 1
+    local several = #gear > 1
     panel.SetMenu:SetShown(several)
     panel.SetName:SetShown(not several)
     if several then
         panel.SetMenu:GenerateMenu()
     else
-        panel.SetName:SetText(set.n)
+        panel.SetName:SetText(set.worn and SetLabel(set) or set.n)
     end
-    panel.SetIcon:SetTexture(set.i > 0 and set.i or QUESTION_MARK)
+    panel.SetIcon:SetTexture(set.worn and WORN_ICON or set.i > 0 and set.i or QUESTION_MARK)
     -- The talents button shows the build's main tree, greyed when its
     -- talents are not shared.
     local main = ns.Data.MainTab(build)
@@ -370,8 +388,7 @@ end
 -- gear.
 function GearPanel.Show(guid, group, target, index)
     local guild = ns.Data.CurrentGuild(false)
-    local build = ns.Data.BuildOf(guild and guild.members[guid], group)
-    if not (build and build.q) then
+    if #ns.Data.GearOf(guild and guild.members[guid], group) == 0 then
         GearPanel.Hide()
         return false
     end

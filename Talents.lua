@@ -91,6 +91,14 @@ local function SpentPerTab(configID, tabs)
     return spent
 end
 
+-- Points not spent yet in a config.
+local function UnspentPoints(configID, treeID)
+    local infos = ns.Try(C_Traits.GetTreeCurrencyInfo, configID, treeID, true)
+    local first = ns.CanRead(infos) and infos[1]
+    local points = first and ns.CanRead(first) and Number(first.quantity)
+    return points and math.min(math.max(math.floor(points), 0), LIMITS.points) or nil
+end
+
 local function ImportString(configID)
     local text = ns.Plain(ns.Try(C_Traits.GenerateImportString, configID))
     if type(text) == "string" and text ~= "" and #text <= LIMITS.build and text:find("^[%w%+/=]+$") then
@@ -127,7 +135,10 @@ function Talents.Read()
         return nil
     end
     local tabs = ReadTabs(treeID)
-    local talents = { lv = math.min(level, LIMITS.level), tr = treeID, ag = active, tb = tabs, s = {} }
+    local talents = {
+        lv = math.min(level, LIMITS.level), tr = treeID, ag = active, tb = tabs, s = {},
+        un = UnspentPoints(activeConfig, treeID),
+    }
     for group = 1, math.min(SpecGroupCount(), LIMITS.specs) do
         local configID = group == active and activeConfig or ConfigForSpecGroup(group, false)
         local text = configID and ImportString(configID)
@@ -191,7 +202,7 @@ local function HintOnce(talents)
     end
 end
 
-local FIELDS = { "lv", "tr", "ag", "tb", "s" }
+local FIELDS = { "lv", "tr", "ag", "tb", "s", "un" }
 
 function Talents.Update()
     local record = ns.Data.GetOwnRecord(true)

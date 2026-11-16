@@ -299,6 +299,12 @@ local setMenu = H.MenuOf(panel.SetMenu)
 H.eq(setMenu[1].text, "Fishing (default)", "the default first")
 setMenu[2].setSelected()
 H.eq(slots[18].item, Sets.ItemString(BOW), "picking another shows its items")
+H.eq(#setMenu, 3, "and, last, what the member wears with these talents")
+H.eq(setMenu[3].text, "Equipped", "as Equipped")
+setMenu[3].setSelected()
+H.check(slots[18].item == Sets.ItemString(BOW) and slots[16].item == nil, "its items")
+H.eq(panel.SetIcon._texture, "Interface\\Icons\\INV_Chest_Chain_05", "with an icon of its own")
+setMenu[2].setSelected()
 mageWindow.globals.HideUIPanel(mageWindow.frame)
 H.check(not panel._shown and mns.GearPanel.current == nil, "closing the talents closes the gear")
 mageWindow.globals.PlayerSpellsUtil.OpenToClassTalentsTab()
@@ -383,4 +389,27 @@ gearButton._scripts.OnClick(gearButton)
 H.check(not panel._shown, "and no gear opens")
 mageWindow.globals.HideUIPanel(window)
 Sets.SetShared(1, true)
+
+H.section("Gear: what the member wears, without sets")
+local assigned = {}
+for i, id in ipairs(Sets.Of(1)) do
+    assigned[i] = id
+end
+for _, id in ipairs(assigned) do
+    Sets.Assign(1, id, false)
+end
+WaitForCopy()
+primaryIcon._scripts.OnEnter(primaryIcon)
+lines = table.concat(mage.env.GameTooltip._lines, "\n")
+H.check(not lines:find("Gear sets", 1, true) and lines:find("Click to see the talents and the gear.", 1, true),
+    "no sets, but the roster offers the gear worn")
+primaryIcon._scripts.OnClick(primaryIcon)
+H.check(window._shown and panel._shown, "a click opens the talents and, beside them, the gear worn")
+H.check(panel.SetName._shown and panel.SetName:GetText() == "Equipped", "Equipped alone, without a menu")
+H.check(gearButton:IsEnabled() and gearButton.Icon._texture == "Interface\\Icons\\INV_Chest_Chain_05",
+    "the talent window's gear button is on")
+mageWindow.globals.HideUIPanel(window)
+for _, id in ipairs(assigned) do
+    Sets.Assign(1, id, true)
+end
 H.eq(#world.errors, 0, "no errors")

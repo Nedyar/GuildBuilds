@@ -16,6 +16,7 @@ Pack.LIMITS = {
     sets = 10,      -- gear sets of one build
     slot = 19,      -- the last equipment slot (the first is 1: no ammo)
     item = 255,     -- length of an item string
+    itemLevel = 9999,
 }
 
 -- Records --------------------------------------------------------------------
@@ -33,10 +34,15 @@ Pack.LIMITS = {
 --       tab, in the order of tb, q = the gear sets that go with it, the
 --       default one first, only when its owner shares them: { n = name,
 --       i = icon file ID, 0 if unknown, it = items { s = equipment slot,
---       i = item string } } }.
+--       i = item string } } },
+--   un = points not spent yet, in the active build (from 0.2.0);
+--   and, from 0.2.0, while its owner shares the active build's gear:
+--   w = the items it wears: { s = equipment slot, i = item string,
+--       il = item level, 0 if unknown }, by slot,
+--   il = the average item level of what it wears, in hundredths, or nil.
 -- A packed record is prefixed by its length, so fields added later are
--- skipped by older readers. The gear sets come after the builds, for the
--- same reason.
+-- skipped by older readers. The gear sets come after the builds, and what
+-- 0.2.0 added after everything 0.1 reads, for the same reason.
 local ABSENT, PRESENT = 0, 1
 
 local LIMITS = Pack.LIMITS
@@ -156,6 +162,42 @@ local function ReadTalents(reader, record)
     ReadGear(reader, record)
 end
 
+-- What 0.2.0 added: unspent points and the items worn. 0 stands for an
+-- unknown number, so known ones are stored plus one.
+local function WriteWorn(writer, record)
+    writer:UInt(record.un and record.un + 1 or 0)
+    if not record.w then
+        writer:Byte(ABSENT)
+        return
+    end
+    writer:Byte(PRESENT)
+    writer:UInt(record.il and record.il + 1 or 0)
+    writer:UInt(#record.w)
+    for _, item in ipairs(record.w) do
+        writer:Byte(item.s)
+        writer:Str(item.i)
+        writer:UInt(item.il or 0)
+    end
+end
+
+local function ReadWorn(reader, record)
+    local unspent = reader:UInt()
+    record.un = unspent > 0 and unspent - 1 or nil
+    if reader:Byte() ~= PRESENT then
+        return
+    end
+    local level = reader:UInt()
+    record.il = level > 0 and level - 1 or nil
+    local count = reader:UInt()
+    if count > LIMITS.slot then
+        error("too many items worn", 0)
+    end
+    record.w = {}
+    for i = 1, count do
+        record.w[i] = { s = reader:Byte(), i = reader:Str(LIMITS.item), il = reader:UInt() }
+    end
+end
+
 function Pack.WriteRecord(writer, guid, record)
     local body = Pack.Writer()
     body:Str(guid)
@@ -169,6 +211,7 @@ function Pack.WriteRecord(writer, guid, record)
     else
         body:Byte(ABSENT)
     end
+    WriteWorn(body, record)
     writer:Str(body:Result())
 end
 
@@ -185,5 +228,10 @@ function Pack.ReadRecord(reader)
     if reader:Byte() == PRESENT then
         ReadTalents(reader, record)
     end
+    -- A record from 0.1 ends here.
+    if not reader:AtEnd() then
+        ReadWorn(reader, record)
+    end
+    -- Anything after this was added by a later version.
     return guid, record
 end

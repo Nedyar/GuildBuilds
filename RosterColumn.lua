@@ -105,6 +105,7 @@ local function IconOnEnter(button)
         end
         GameTooltip:AddLine(L["Gear sets: %s"]:format(table.concat(names, ", ")), 1, 1, 1, true)
     end
+    local hasGear = #ns.Data.GearOf(record, spec.gr) > 0
     local green = { GREEN_FONT_COLOR:GetRGB() }
     if button.guid == ns.playerGUID then
         -- Ours open our own talents, shared or not.
@@ -113,10 +114,10 @@ local function IconOnEnter(button)
             GameTooltip:AddLine(L["Talents not shared with the guild: tick the box at the bottom of your talent window to share them."], 0.7, 0.7, 0.7, true)
         end
     elseif spec.x then
-        GameTooltip:AddLine(spec.q and L["Click to see the talents and the gear."] or L["Click to see the talents."], unpack(green))
+        GameTooltip:AddLine(hasGear and L["Click to see the talents and the gear."] or L["Click to see the talents."], unpack(green))
     else
         GameTooltip:AddLine(L["Its talents are not shared."], 0.7, 0.7, 0.7)
-        if spec.q then
+        if hasGear then
             GameTooltip:AddLine(L["Click to see the gear."], unpack(green))
         end
     end

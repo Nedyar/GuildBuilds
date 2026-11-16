@@ -143,7 +143,8 @@ local function Create(frame)
     box:SetPoint("BOTTOMLEFT", frame.Background or frame, "BOTTOMLEFT", 44, 6)
 
     gearBox = NewBox(frame, L["Share gear"], ns.Sets.SetShared, BoxTooltip(L["Share these gear sets with the guild"],
-        L["Guild members with Guild Builds can see the gear sets of these talents from the guild roster."]))
+        L["Guild members with Guild Builds can see the gear sets of these talents from the guild roster."],
+        L["While these talents are in use, the gear you are wearing is shared too."]))
     gearBox:SetPoint("LEFT", box.Label, "RIGHT", 14, -1)
 
     dropdown = CreateFrame("DropdownButton", nil, frame, "WowStyle1DropdownTemplate")

@@ -81,6 +81,12 @@ local function BuildShown()
     return ns.Data.BuildOf(record, current.gr), record
 end
 
+-- The gear of the build the window shows (Data.GearOf): empty without one.
+local function GearShown()
+    local build, record = BuildShown()
+    return build and ns.Data.GearOf(record, build.gr) or {}
+end
+
 -- The gear button, on the window while it shows a member's build: it opens
 -- or closes the build's gear beside it, when its owner shares it.
 local gearButton
@@ -92,15 +98,15 @@ function Viewer.UpdateGearButton()
     local build = BuildShown()
     gearButton:SetShown(build ~= nil)
     if build then
-        local set = build.q and build.q[1]
-        ns.TitleButton.Set(gearButton, set and set.i > 0 and set.i or GEAR_ICON, build.q ~= nil)
+        local gear = GearShown()
+        local set = gear[1]
+        ns.TitleButton.Set(gearButton, set and not set.worn and set.i > 0 and set.i or GEAR_ICON, #gear > 0)
     end
 end
 
 -- Opens or closes the gear of the build the window shows, beside it.
 function Viewer.ToggleGear()
-    local build = BuildShown()
-    if not (build and build.q) then
+    if #GearShown() == 0 then
         return
     end
     local current = Viewer.current
@@ -112,9 +118,8 @@ function Viewer.ToggleGear()
 end
 
 local function GearTooltip()
-    local build = BuildShown()
     GameTooltip:SetText(L["Gear"], 1, 1, 1)
-    if build and build.q then
+    if #GearShown() > 0 then
         GameTooltip:AddLine(L["Show or hide the gear of these talents beside them."], nil, nil, nil, true)
     else
         GameTooltip:AddLine(L["Its gear is not shared."], 0.7, 0.7, 0.7)
@@ -216,8 +221,10 @@ function Viewer.Toggle(guid, group)
         return true
     end
     local guild = ns.Data.CurrentGuild(false)
-    local build = ns.Data.BuildOf(guild and guild.members[guid], group)
-    if build and not build.x and build.q then
+    local record = guild and guild.members[guid]
+    local build = ns.Data.BuildOf(record, group)
+    local hasGear = #ns.Data.GearOf(record, group) > 0
+    if build and not build.x and hasGear then
         -- Only its gear is shared: beside the guild window, without someone
         -- else's talents left open.
         if Viewer.IsShowing() then
@@ -228,7 +235,7 @@ function Viewer.Toggle(guid, group)
     if not Viewer.ShowTalents(guid, group) then
         return false
     end
-    if build.q then
+    if hasGear then
         ns.GearPanel.Show(guid, group, Frame())
     else
         ns.GearPanel.Hide()

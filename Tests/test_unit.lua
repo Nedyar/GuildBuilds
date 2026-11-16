@@ -232,6 +232,10 @@ local toc = Read("GuildBuilds.toc")
 local changelog = Read("CHANGELOG.md")
 local tocVersion = toc:match("## Version: ([%d%.]+)")
 H.check(changelog ~= nil and changelog:match("## ([%d%.]+)") == tocVersion, "the TOC version is the changelog's newest")
+local announced = Read("Core.lua"):match('\nlocal ANNOUNCE_AS = "([%d%.]+)"')
+if announced then
+    print(("  NOTE: Core.lua tells the guild this is %s: set ANNOUNCE_AS to nil before tagging a release"):format(announced))
+end
 H.check(toc:find("## Dependencies: LibGuildSync", 1, true) ~= nil, "LibGuildSync is a dependency")
 H.check(toc:find("## SavedVariables: GuildBuildsDB", 1, true) ~= nil, "the saved variable is declared")
 local pkgmeta = Read(".pkgmeta")
