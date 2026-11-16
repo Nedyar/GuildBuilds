@@ -34,15 +34,17 @@ Pack.LIMITS = {
 --       tab, in the order of tb, q = the gear sets that go with it, the
 --       default one first, only when its owner shares them: { n = name,
 --       i = icon file ID, 0 if unknown, it = items { s = equipment slot,
---       i = item string } } },
+--       i = item string, il = item level, 0 if unknown (from 0.3.0) },
+--       ig = the slots it leaves as they are, in order (from 0.3.0) } },
 --   un = points not spent yet, in the active build (from 0.2.0);
 --   and, from 0.2.0, while its owner shares the active build's gear:
 --   w = the items it wears: { s = equipment slot, i = item string,
 --       il = item level, 0 if unknown }, by slot,
 --   il = the average item level of what it wears, in hundredths, or nil.
 -- A packed record is prefixed by its length, so fields added later are
--- skipped by older readers. The gear sets come after the builds, and what
--- 0.2.0 added after everything 0.1 reads, for the same reason.
+-- skipped by older readers. The gear sets come after the builds, what 0.2.0
+-- added after everything 0.1 reads, and what 0.3.0 added after everything
+-- 0.2 reads, for the same reason.
 local ABSENT, PRESENT = 0, 1
 
 local LIMITS = Pack.LIMITS
@@ -198,6 +200,68 @@ local function ReadWorn(reader, record)
     end
 end
 
+-- What 0.3.0 added: for each gear set, the level of each of its items (in
+-- the order of its items) and the slots it leaves as they are.
+local function WriteSetDetails(writer, record)
+    local builds = {}
+    for _, spec in ipairs(record.s or {}) do
+        if spec.q then
+            builds[#builds + 1] = spec
+        end
+    end
+    writer:UInt(#builds)
+    for _, spec in ipairs(builds) do
+        writer:Byte(spec.gr)
+        writer:UInt(#spec.q)
+        for _, set in ipairs(spec.q) do
+            writer:UInt(#set.it)
+            for _, item in ipairs(set.it) do
+                writer:UInt(item.il or 0)
+            end
+            local leaves = set.ig or {}
+            writer:UInt(#leaves)
+            for _, slot in ipairs(leaves) do
+                writer:Byte(slot)
+            end
+        end
+    end
+end
+
+local function ReadSetDetails(reader, record)
+    local count = reader:UInt()
+    if count > LIMITS.specs then
+        error("too many builds with gear", 0)
+    end
+    for _ = 1, count do
+        local group, sets = reader:Byte(), reader:UInt()
+        local build
+        for _, spec in ipairs(record.s or {}) do
+            if spec.gr == group then
+                build = spec
+            end
+        end
+        if not (build and build.q and #build.q == sets) then
+            error("details of unknown gear sets", 0)
+        end
+        for _, set in ipairs(build.q) do
+            if reader:UInt() ~= #set.it then
+                error("details of unknown items", 0)
+            end
+            for _, item in ipairs(set.it) do
+                item.il = reader:UInt()
+            end
+            local leaves = reader:UInt()
+            if leaves > LIMITS.slot then
+                error("too many slots left", 0)
+            end
+            set.ig = {}
+            for i = 1, leaves do
+                set.ig[i] = reader:Byte()
+            end
+        end
+    end
+end
+
 function Pack.WriteRecord(writer, guid, record)
     local body = Pack.Writer()
     body:Str(guid)
@@ -212,6 +276,7 @@ function Pack.WriteRecord(writer, guid, record)
         body:Byte(ABSENT)
     end
     WriteWorn(body, record)
+    WriteSetDetails(body, record)
     writer:Str(body:Result())
 end
 
@@ -231,6 +296,10 @@ function Pack.ReadRecord(reader)
     -- A record from 0.1 ends here.
     if not reader:AtEnd() then
         ReadWorn(reader, record)
+    end
+    -- A record from 0.2 ends here.
+    if not reader:AtEnd() then
+        ReadSetDetails(reader, record)
     end
     -- Anything after this was added by a later version.
     return guid, record

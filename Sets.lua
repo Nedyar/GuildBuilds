@@ -233,9 +233,9 @@ local function ItemIDOf(itemString)
     return tonumber(itemString:match("^item:(%d+)"))
 end
 
--- The link of the item at one of the Equipment Manager's locations: worn,
--- in the bags, or in the bank while it can be read.
-local function LinkAt(location)
+-- The link and the item level of the item at one of the Equipment Manager's
+-- locations: worn, in the bags, or in the bank while it can be read.
+local function ItemAt(location)
     if not location or location <= 1 or type(EquipmentManager_GetLocationData) ~= "function" then
         return nil
     end
@@ -243,21 +243,36 @@ local function LinkAt(location)
     if not ns.CanRead(data) or not Number(data.slot) then
         return nil
     end
+    local link, place
     if data.isBags then
-        return C_Container and ns.Plain(ns.Try(C_Container.GetContainerItemLink, data.bag, data.slot))
+        link = C_Container and ns.Plain(ns.Try(C_Container.GetContainerItemLink, data.bag, data.slot))
+        place = ItemLocation and ns.Try(ItemLocation.CreateFromBagAndSlot, ItemLocation, data.bag, data.slot)
     elseif data.isPlayer or data.isBank then
-        return ns.Plain(ns.Try(GetInventoryItemLink, "player", data.slot))
+        link = ns.Plain(ns.Try(GetInventoryItemLink, "player", data.slot))
+        place = data.isPlayer and ItemLocation and ns.Try(ItemLocation.CreateFromEquipmentSlot, ItemLocation, data.slot)
     end
+    local level = place and C_Item.GetCurrentItemLevel and Number(ns.Try(C_Item.GetCurrentItemLevel, place))
+    return link, level
 end
 
--- A set's items: { s = slot, i = item string }, by slot. previous: the same
--- set's items as shared before, kept for items that cannot be read now (in
--- the bank); an item never read is shared by its ID alone.
+-- An item's level from its link or ID, when the client knows it; 0 when not.
+local function LevelOf(item, level)
+    if not level and item and C_Item.GetDetailedItemLevelInfo then
+        level = Number(ns.Try(C_Item.GetDetailedItemLevelInfo, item))
+    end
+    return level and math.min(math.max(math.floor(level + 0.5), 0), LIMITS.itemLevel) or 0
+end
+
+-- A set's items: { s = slot, i = item string, il = item level, 0 if
+-- unknown }, by slot, and the slots it leaves as they are (ignored), in
+-- order. previous: the same set's items as shared before, kept for items
+-- that cannot be read now (in the bank); an item never read is shared by
+-- its ID alone.
 function Sets.ItemsOf(id, previous)
     local api = C_EquipmentSet
     local itemIDs = api and ns.Try(api.GetItemIDs, id)
     if not ns.CanRead(itemIDs) then
-        return {}
+        return {}, {}
     end
     local locations = ns.Try(api.GetItemLocations, id)
     locations = ns.CanRead(locations) and locations or {}
@@ -265,24 +280,33 @@ function Sets.ItemsOf(id, previous)
     ignored = ns.CanRead(ignored) and ignored or {}
     local known = {}
     for _, item in ipairs(previous or {}) do
-        known[item.s] = item.i
+        known[item.s] = item
     end
-    local items = {}
+    local items, leaves = {}, {}
     -- The ammo slot (0) is left out: sets cannot hold ammo.
     for slot = 1, LIMITS.slot do
         local itemID = Number(itemIDs[slot])
         -- 0 is an empty slot, 1 one the set leaves as it is.
-        if itemID and itemID > 1 and ns.Plain(ignored[slot]) ~= true then
+        if ns.Plain(ignored[slot]) == true or itemID == 1 then
+            leaves[#leaves + 1] = slot
+        elseif itemID and itemID > 1 then
             itemID = math.floor(itemID)
-            local text = Sets.ItemString(LinkAt(Number(locations[slot])))
-            if not text or ItemIDOf(text) ~= itemID then
+            local link, level = ItemAt(Number(locations[slot]))
+            local text = Sets.ItemString(link)
+            if text and ItemIDOf(text) == itemID then
+                level = LevelOf(link, level)
+            else
                 local old = known[slot]
-                text = old and ItemIDOf(old) == itemID and old or ("item:" .. itemID)
+                if old and ItemIDOf(old.i) == itemID then
+                    text, level = old.i, old.il or 0
+                else
+                    text, level = "item:" .. itemID, LevelOf(itemID)
+                end
             end
-            items[#items + 1] = { s = slot, i = text }
+            items[#items + 1] = { s = slot, i = text, il = level }
         end
     end
-    return items
+    return items, leaves
 end
 
 -- A name the record can hold (see Data.lua's checks).
@@ -311,7 +335,8 @@ function Sets.Read(group, previous)
     for _, id in ipairs(ids) do
         local set = known[id]
         local name = CleanName(set.name)
-        list[#list + 1] = { n = name, i = set.icon, it = Sets.ItemsOf(id, before[name]) }
+        local items, leaves = Sets.ItemsOf(id, before[name])
+        list[#list + 1] = { n = name, i = set.icon, it = items, ig = leaves }
     end
     return list
 end

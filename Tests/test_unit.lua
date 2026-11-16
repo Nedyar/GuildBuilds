@@ -64,11 +64,12 @@ H.check(not pcall(Pack.ReadRecord, Pack.Reader(Pack.RecordString(GUID, longBuild
 local geared = H.DeepCopy(record)
 geared.s[2].x = nil
 geared.s[2].q = {
-    { n = "Raid", i = 132222, it = { { s = 1, i = "item:16846::::::::::::" }, { s = 18, i = "item:18713:1:::::-23::::::" } } },
-    { n = "Pesca y más", i = 0, it = {} },
+    { n = "Raid", i = 132222, ig = { 3, 19 },
+      it = { { s = 1, i = "item:16846::::::::::::", il = 66 }, { s = 18, i = "item:18713:1:::::-23::::::", il = 0 } } },
+    { n = "Pesca y más", i = 0, it = {}, ig = {} },
 }
 _, back = Pack.ReadRecord(Pack.Reader(Pack.RecordString(GUID, geared)))
-H.check(ns.Same(back, geared), "gear sets round trip, on the build they go with")
+H.check(ns.Same(back, geared), "gear sets round trip, on the build they go with, with item levels and slots left as they are")
 H.eq(back.s[1].q, nil, "a build without them reads without them")
 local tooManySets = H.DeepCopy(geared)
 for i = 3, Pack.LIMITS.sets + 1 do
@@ -118,6 +119,17 @@ H.check(BrokenGear(function(q) q[1].it[2].s = 1 end), "two items in one slot ref
 H.check(BrokenGear(function(q) q[1].it[1].s = Pack.LIMITS.slot + 1 end), "a slot past the last refused")
 H.check(BrokenGear(function(q) q[1].it[1].s = 0 end), "the ammo slot refused")
 H.check(BrokenGear(function(q) q[1].i = -1 end), "a bad icon refused")
+H.check(BrokenGear(function(q) q[1].it[1].il = Pack.LIMITS.itemLevel + 1 end), "an impossible item level refused")
+H.check(BrokenGear(function(q) q[1].ig = { 1 } end), "a slot left as it is that holds an item refused")
+H.check(BrokenGear(function(q) q[1].ig = { 3, 3 } end), "a slot left twice refused")
+H.check(BrokenGear(function(q) q[1].ig = { 0 } end), "leaving the ammo slot refused")
+H.check(BrokenGear(function(q) q[1].ig = "3" end), "slots left that are not a list refused")
+local older = H.DeepCopy(geared)
+older.s[2].q[1].ig, older.s[2].q[1].it[1].il = nil, nil
+H.check(ns.Same(Data.CleanRecord(older, now).s[2].q, older.s[2].q), "sets from 0.2, without them, pass")
+H.eq(Data.SetItemLevel({ it = { { s = 1, il = 60 }, { s = 4, il = 1 }, { s = 18, il = 0 }, { s = 5, il = 70 }, { s = 19, il = 5 } } }), 65,
+    "a set's item level: the average of the levels known, without shirt and tabard")
+H.eq(Data.SetItemLevel({ it = { { s = 1 } } }), nil, "none when no level is known")
 H.check(BrokenGear(function(q)
     for i = #q + 1, Pack.LIMITS.sets + 1 do
         q[i] = { n = "Set" .. i, i = 0, it = {} }

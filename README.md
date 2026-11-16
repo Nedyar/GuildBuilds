@@ -19,8 +19,11 @@ them. It also ties your own gear sets to your talents.
   offline. Click it again to close it. Your own icons open your own talents.
 - **Gear beside the talents.** The build's gear set shows in a panel beside
   the talent window, its items by slot as in the character window, with
-  their tooltips (shift-click links one, control-click tries it on). A build
-  with more sets has a menu to pick one, its default first. When only the
+  their tooltips (shift-click links one, control-click tries it on), and
+  its item level under its icon: the average of its items, without shirt
+  and tabard. A slot the set leaves as it is (ignored in the Equipment
+  Manager) shows the game's mark. A build with more sets has a menu to pick
+  one, its default first. When only the
   gear is shared, the panel opens beside the guild window. A small button
   by each window's close button opens or closes the other one: the gear
   from the talents, the talents from the gear (greyed when that part is not

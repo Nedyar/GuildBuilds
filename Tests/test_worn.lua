@@ -68,7 +68,8 @@ H.check(#gear == 1 and gear[1].worn and #gear[1].it == 2, "a build without sets 
 H.eq(#mns.Data.GearOf(copy, 2), 0, "only with the talents in use")
 H.check(mns.GearPanel.Show(hunter.guid, 1, mage.env.UIParent), "the gear panel shows it")
 local panel = mns.GearPanel.panel
-H.check(panel.SetName._shown and panel.SetName:GetText() == "Equipped (item level 60.5)", "as Equipped, with the item level")
+H.check(panel.SetName._shown and panel.SetName:GetText() == "Equipped", "as Equipped")
+H.check(panel.ItemLevel._shown and panel.ItemLevel:GetText() == "Item level 60.5", "with the game's average item level under its icon")
 H.eq(mns.GearPanel.buttons[1].item, "item:16939:0:0:0:0:0:0::::0", "and the items worn")
 mns.GearPanel.Hide()
 

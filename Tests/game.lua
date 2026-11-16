@@ -89,6 +89,22 @@ return function(H)
     local function EquipmentSets(client, env)
         client.sets = client.sets or {}
         client.equippedSets = {}
+        -- Item levels: what is worn, as the harness gives it; the items in
+        -- the bags, and any item by link or ID, from client.itemLevels
+        -- ({ [itemID] = level }), when given.
+        local CurrentItemLevel = env.C_Item.GetCurrentItemLevel
+        env.C_Item.GetCurrentItemLevel = function(location)
+            if location.bag then
+                local container = client.containers[location.bag]
+                local item = container and container[location.slot]
+                return item and client.itemLevels and client.itemLevels[item[1]]
+            end
+            return CurrentItemLevel(location)
+        end
+        env.C_Item.GetDetailedItemLevelInfo = function(item)
+            local itemID = tonumber(item) or tonumber(tostring(item):match("item:(%d+)"))
+            return itemID and client.itemLevels and client.itemLevels[itemID]
+        end
         local function IDs()
             local ids = {}
             for id in pairs(client.sets) do

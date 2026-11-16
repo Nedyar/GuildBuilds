@@ -3,7 +3,7 @@ local H = ...
 -- Members on the last release and members on this version share one guild:
 -- both must keep talking. The release is taken from its git tag
 -- (H.Release).
-local RELEASE = "v0.1.0"
+local RELEASE = "v0.2.0"
 
 H.section("Versions: against " .. RELEASE)
 local old = H.Release(RELEASE)
@@ -48,19 +48,33 @@ for _, case in ipairs({
     local world = H.NewWorld({ seed = #label, senderFormat = "short", strictWhispers = true })
     local first = Character(world, "First Member", firstAddons)
     local second = Character(world, "Second Member", secondAddons)
+    -- A gear set with its helm worn, leaving the shoulders as they are.
+    for _, client in ipairs({ first, second }) do
+        client.sets = {
+            [0] = { name = "Main", icon = 132222, items = { [1] = 16939, [3] = 1 }, locations = { [1] = H.WORN + 1 }, ignored = { [3] = true } },
+        }
+    end
     world:Login(first)
+    first.ns.Sets.Assign(1, 0, true)
     world:RunFor(10)
     world:Login(second)
+    second.ns.Sets.Assign(1, 0, true)
     world:RunFor(300)
     H.check(HasBuilds(RecordOf(second, first)), label .. ": the one who logged in later has the other's builds")
     H.check(HasBuilds(RecordOf(first, second)), label .. ": and the other way round")
-    -- This version's record also carries what it wears, which the release
-    -- skips.
+    -- This version's sets also carry their item levels and the slots they
+    -- leave as they are, which the release skips.
     local current = firstAddons and second or first
     local release = firstAddons and first or second
-    H.check(current.ns.Data.GetOwnRecord(false).w ~= nil, label .. ": this version shares its items worn")
-    H.eq(RecordOf(release, current).w, nil, label .. ": the release skips them")
-    H.eq(RecordOf(current, release).w, nil, label .. ": and shares none")
+    local own = current.ns.Data.GetOwnRecord(false).s[1].q[1]
+    H.check(own.it[1].il == 76 and H.SameList(own.ig, { 3 }), label .. ": this version shares item levels and slots left")
+    local atRelease = RecordOf(release, current)
+    H.check(atRelease.s[1].q ~= nil and atRelease.s[1].q[1].it[1].s == 1 and atRelease.s[1].q[1].ig == nil,
+        label .. ": the release gets the set, and skips them")
+    local atCurrent = RecordOf(current, release)
+    H.check(atCurrent.s[1].q ~= nil and atCurrent.s[1].q[1].ig == nil and atCurrent.s[1].q[1].it[1].il == nil,
+        label .. ": the release's sets come without them")
+    H.check(atRelease.w ~= nil and atCurrent.w ~= nil, label .. ": both share the items worn (0.2)")
     -- A change while both are online.
     current.talents.groups[1][103] = 1
     world:FireEvent(current, "TRAIT_CONFIG_UPDATED", 501)

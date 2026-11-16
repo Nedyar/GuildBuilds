@@ -37,6 +37,9 @@ local SLOT_NAMES = {
 }
 local MIN_QUALITY = 2   -- uncommon and better show their quality's border
 local WORN_ICON = "Interface\\Icons\\INV_Chest_Chain_05"  -- for what the member wears
+-- What the game's character window shows on a slot a set leaves as it is.
+local IGNORED_TEXTURE = "Interface\\PaperDollInfoFrame\\UI-GearManager-LeaveItem-Transparent"
+local IGNORED_SIZE = 40
 local TITLE_INSET = 58  -- from each side to the title, when it cannot be measured
 local TITLE_GAP = 2     -- between the title and the talents button
 local QUESTION_MARK = 134400
@@ -70,17 +73,30 @@ end
 -- A set's name, or "Equipped" for what the member wears.
 local function SetLabel(set, index)
     if set.worn then
-        if set.il and set.il > 0 then
-            return L["Equipped (item level %s)"]:format(("%.1f"):format(set.il / 100))
-        end
         return L["Equipped"]
     end
     return index == 1 and L["%s (default)"]:format(set.n) or set.n
 end
 
+-- The item level shown for a set: the game's average for what the member
+-- wears, else the average of the set's items (Data.SetItemLevel); nil when
+-- unknown.
+local function ItemLevelOf(set)
+    if set.worn then
+        return set.il and set.il > 0 and set.il / 100 or nil
+    end
+    return ns.Data.SetItemLevel(set)
+end
+
 -- Slots -------------------------------------------------------------------------------
 
 local function SlotOnEnter(button)
+    if button.ignored then
+        GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+        GameTooltip:SetText(L["This set leaves this slot as it is."], 1, 1, 1, 1, true)
+        GameTooltip:Show()
+        return
+    end
     if not button.item then
         return
     end
@@ -111,6 +127,11 @@ local function CreateSlot(slot, emptyTexture)
     button.Border = button:CreateTexture(nil, "OVERLAY")
     button.Border:SetAllPoints()
     button.Border:SetTexture("Interface\\Common\\WhiteIconFrame")
+    button.Ignored = button:CreateTexture(nil, "OVERLAY", nil, 1)
+    button.Ignored:SetSize(IGNORED_SIZE, IGNORED_SIZE)
+    button.Ignored:SetPoint("CENTER")
+    button.Ignored:SetTexture(IGNORED_TEXTURE)
+    button.Ignored:Hide()
     button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
     button:RegisterForClicks("LeftButtonUp")
     button:SetScript("OnEnter", SlotOnEnter)
@@ -219,6 +240,10 @@ local function Create()
     panel.SetIcon = panel:CreateTexture(nil, "ARTWORK")
     panel.SetIcon:SetSize(48, 48)
     panel.SetIcon:SetPoint("TOP", 0, -HEADER - 10)
+    -- Under it, the set's item level.
+    panel.ItemLevel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    panel.ItemLevel:SetPoint("TOP", panel.SetIcon, "BOTTOM", 0, -8)
+    panel.ItemLevel:SetWidth(MIDDLE - 8)
 
     for column, slots in ipairs(COLUMNS) do
         local x = column == 1 and MARGIN or WIDTH - MARGIN - SLOT_SIZE
@@ -357,6 +382,11 @@ function GearPanel.Refresh()
         panel.SetName:SetText(set.worn and SetLabel(set) or set.n)
     end
     panel.SetIcon:SetTexture(set.worn and WORN_ICON or set.i > 0 and set.i or QUESTION_MARK)
+    local level = ItemLevelOf(set)
+    panel.ItemLevel:SetShown(level ~= nil)
+    if level then
+        panel.ItemLevel:SetText(("%s %.1f"):format(STAT_AVERAGE_ITEM_LEVEL or L["Item level"], level))
+    end
     -- The talents button shows the build's main tree, greyed when its
     -- talents are not shared.
     local main = ns.Data.MainTab(build)
@@ -367,11 +397,17 @@ function GearPanel.Refresh()
     for _, item in ipairs(set.it) do
         items[item.s] = item.i
     end
+    local leaves = {}
+    for _, slot in ipairs(set.ig or {}) do
+        leaves[slot] = true
+    end
     local loading = false
     for slot, button in pairs(buttons) do
         if not ShowItem(button, items[slot]) then
             loading = true
         end
+        button.ignored = leaves[slot] == true
+        button.Ignored:SetShown(button.ignored)
     end
     -- Item qualities the client did not have yet: drawn again once loaded.
     if loading then

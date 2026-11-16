@@ -22,6 +22,9 @@ hunter.sets = {
     [1] = { name = "Fishing", icon = 136245, items = { [16] = 6256 }, locations = { [16] = H.InBag(0, 9) } },
     [2] = { name = "PvP", icon = 132222, items = { [1] = 7000, [3] = 7001 }, locations = {}, ignored = { [3] = true } },
 }
+-- The levels of the set's items: the bow (worn), the hammer (in the bags)
+-- and the chest piece the client knows though it is not found.
+hunter.itemLevels = { [2504] = 14, [2361] = 21, [6000] = 30 }
 local hunterWindow = H.TalentWindow(hunter)
 hunter.globals = hunterWindow.globals
 local mage = world:NewClient("Mage Name", { classID = 8, level = 16, talents = { active = 1, groups = { [1] = { [201] = 5 } } } })
@@ -76,6 +79,11 @@ Sets.Assign(3, 0, true)
 H.eq(ns.Data.OwnState().sets[3], nil, "only the two spec groups")
 
 H.section("Gear: shared with the builds")
+local pvpItems, pvpLeft = Sets.ItemsOf(2)
+H.check(#pvpItems == 1 and pvpItems[1].s == 1 and H.SameList(pvpLeft, { 3 }),
+    "a slot ignored in the game's set is left as it is, though the set names an item for it")
+local _, adventurerLeft = Sets.ItemsOf(0)
+H.check(H.SameList(adventurerLeft, { 1 }), "as is one the set marks so (item 1); an empty one is not")
 local q1 = Own().s[1].q
 H.check(q1 ~= nil and #q1 == 1, "the Primary build carries its set")
 H.check(q1[1].n == "Adventurer" and q1[1].i == 132164, "with its name and icon")
@@ -334,6 +342,12 @@ secondaryIcon._scripts.OnClick(secondaryIcon)
 H.check(panel._shown and #mageWindow.opened == opened, "a click shows the gear without the talents")
 H.eq(mns.GearPanel.current.target, mage.env.CommunitiesFrame, "beside the guild window")
 H.check(panel.SetName._shown and panel.SetName:GetText() == "Adventurer", "one set shows its name")
+H.check(panel.ItemLevel._shown and panel.ItemLevel:GetText() == "Item level 21.7", "and its item level, the average of its items")
+H.check(slots[1].Ignored._shown and slots[1].Icon._shown == false, "a slot the set leaves as it is shows so, as in the game")
+H.eq(slots[1].Ignored._texture, "Interface\\PaperDollInfoFrame\\UI-GearManager-LeaveItem-Transparent", "with the game's mark")
+H.check(not slots[2].Ignored._shown and not slots[5].Ignored._shown, "an empty slot and one with an item do not")
+slots[1]._scripts.OnEnter(slots[1])
+H.eq(mage.env.GameTooltip._lines[1], "This set leaves this slot as it is.", "its tooltip says so")
 secondaryIcon._scripts.OnClick(secondaryIcon)
 H.check(not panel._shown, "clicking again closes it")
 

@@ -57,13 +57,29 @@ local function CleanGear(sets)
         local items, slots = {}, {}
         for j, item in ipairs(set.it) do
             if type(item) ~= "table" or not Lib.IsCount(item.s, LIMITS.slot) or item.s < 1 or slots[item.s]
-                or not Data.IsItem(item.i) then
+                or not Data.IsItem(item.i) or (item.il ~= nil and not Lib.IsCount(item.il, LIMITS.itemLevel)) then
                 return nil
             end
             slots[item.s] = true
-            items[j] = { s = item.s, i = item.i }
+            items[j] = { s = item.s, i = item.i, il = item.il }
         end
-        clean[i] = { n = set.n, i = set.i or 0, it = items }
+        -- The slots it leaves as they are (sets shared before 0.3.0 do not
+        -- tell): none of them holds an item.
+        local leaves
+        if set.ig ~= nil then
+            if type(set.ig) ~= "table" or #set.ig > LIMITS.slot then
+                return nil
+            end
+            leaves = {}
+            for j, slot in ipairs(set.ig) do
+                if not Lib.IsCount(slot, LIMITS.slot) or slot < 1 or slots[slot] then
+                    return nil
+                end
+                slots[slot] = true
+                leaves[j] = slot
+            end
+        end
+        clean[i] = { n = set.n, i = set.i or 0, it = items, ig = leaves }
     end
     return clean
 end
@@ -201,6 +217,21 @@ function Data.BuildOf(record, group)
             return spec
         end
     end
+end
+
+-- The average level of a set's items whose level is known, but for the
+-- shirt and the tabard, which the game leaves out of the item level too; nil
+-- when none is known.
+local NOT_COUNTED = { [4] = true, [19] = true }
+
+function Data.SetItemLevel(set)
+    local total, count = 0, 0
+    for _, item in ipairs(set.it or {}) do
+        if not NOT_COUNTED[item.s] and item.il and item.il > 0 then
+            total, count = total + item.il, count + 1
+        end
+    end
+    return count > 0 and total / count or nil
 end
 
 -- The gear a member's build shows: its sets, the default one first, then

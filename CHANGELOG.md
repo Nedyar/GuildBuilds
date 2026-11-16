@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 - Item levels and slots left as they are
+
+- **Item level in the gear panel**: under the icon of the set shown, its item level, the average of its items (shirt and tabard left out, as the game does), and, for "Equipped", the game's own average item level.
+- **Slots a set leaves as they are**: the slots ignored in the Equipment Manager show the game's mark, with a tooltip that says so, instead of an empty slot.
+- Members on 0.2 keep sharing builds and sets with this version; their sets come without item levels or ignored slots, and they skip what 0.3 adds.
+
 ## 0.2.0 - The gear you wear
 
 - **The gear you wear goes with your talents**: while the talents in use share their gear ("Share gear" at the bottom of the talent window), what you wear is shared too, with its item levels and your average item level. Untick the box of the talents in use and it is taken back from the guild's copies, as with the gear sets.
