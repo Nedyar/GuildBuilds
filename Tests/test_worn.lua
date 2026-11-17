@@ -43,10 +43,10 @@ H.check(worn ~= nil and #worn == 2, "the items worn, while the gear is shared (b
 H.check(worn and worn[1].s == 1 and worn[2].s == 18, "by slot")
 H.eq(worn and worn[1].i, "item:16939:0:0:0:0:0:0::::0", "as item strings, without the fields that change on their own")
 H.check(worn and worn[1].il == 76 and worn[2].il == 9, "with their item levels")
-H.eq(Own().il, 6050, "and the average item level, in hundredths")
+H.eq(Own().il, 500, "and their item level, in hundredths, as the addon shows it: helm and bow over 17")
 H.eq(Own().un, 4, "the points not spent yet")
 local copy = WaitForCopy()
-H.check(copy ~= nil and ns.Same(copy.w, Own().w) and copy.il == 6050 and copy.un == 4, "all of it reaches the guild")
+H.check(copy ~= nil and ns.Same(copy.w, Own().w) and copy.il == 500 and copy.un == 4, "all of it reaches the guild")
 
 H.section("Worn: changes")
 hunter.gear[18] = nil
@@ -69,7 +69,7 @@ H.eq(#mns.Data.GearOf(copy, 2), 0, "only with the talents in use")
 H.check(mns.GearPanel.Show(hunter.guid, 1, mage.env.UIParent), "the gear panel shows it")
 local panel = mns.GearPanel.panel
 H.check(panel.SetName._shown and panel.SetName:GetText() == "Equipped", "as Equipped")
-H.check(panel.ItemLevel._shown and panel.ItemLevel:GetText() == "Item level 60.5", "with the game's average item level under its icon")
+H.check(panel.ItemLevel._shown and panel.ItemLevel:GetText() == "Item level 5.0", "with its item level under its icon")
 H.eq(mns.GearPanel.buttons[1].item, "item:16939:0:0:0:0:0:0::::0", "and the items worn")
 mns.GearPanel.Hide()
 
@@ -101,7 +101,7 @@ local writer = Pack.Writer()
 Pack.WriteRecord(writer, hunter.guid, Own())
 local guid, read = Pack.ReadRecord(Pack.Reader(writer:Result()))
 H.eq(guid, hunter.guid, "the GUID")
-H.check(ns.Same(read.w, Own().w) and read.il == 6050 and read.un == 4, "the items worn, the item level and the unspent points")
+H.check(ns.Same(read.w, Own().w) and read.il == 500 and read.un == 4, "the items worn, the item level and the unspent points")
 local clean = ns.Data.CleanRecord(read, ns.Now())
 H.check(clean ~= nil and ns.Same(clean.w, Own().w), "and they pass the checks")
 local bare = { n = "Someone", t = ns.Now() - 10, av = 200, lv = 10, tr = 1, ag = 1, tb = { { g = 1 } }, s = { { gr = 1, p = { 0 } } } }

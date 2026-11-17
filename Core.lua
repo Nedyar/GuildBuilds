@@ -42,6 +42,17 @@ function ns.GroupLabel(group)
     return DUAL_SPEC_PRIMARY or L["Primary"]
 end
 
+-- An item level as the addon shows every one: with one decimal ("21.7").
+function ns.ItemLevelNumber(level)
+    return ("%.1f"):format(level)
+end
+
+-- An item level as the gear panel and the sets' tooltips show it:
+-- "Item Level 21.7", in the game's words when it has them.
+function ns.ItemLevelText(level)
+    return ("%s %s"):format(STAT_AVERAGE_ITEM_LEVEL or L["Item level"], ns.ItemLevelNumber(level))
+end
+
 -- Startup ------------------------------------------------------------------
 
 local events = CreateFrame("Frame")
@@ -62,7 +73,7 @@ events:SetScript("OnEvent", function(self, event, name)
         -- Lua error) does not stop the others.
         local parts = {
             ns.Talents.Init, ns.Sets.Init, ns.Equipped.Init, ns.Viewer.Init, ns.GearPanel.Init,
-            ns.ShareBox.Init, ns.GearManager.Init, ns.RosterColumn.Init,
+            ns.ShareBox.Init, ns.GearManager.Init, ns.OwnItemLevel.Init, ns.RosterColumn.Init,
         }
         for _, init in ipairs(parts) do
             xpcall(init, geterrorhandler())

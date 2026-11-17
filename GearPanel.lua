@@ -78,16 +78,6 @@ local function SetLabel(set, index)
     return index == 1 and L["%s (default)"]:format(set.n) or set.n
 end
 
--- The item level shown for a set: the game's average for what the member
--- wears, else the average of the set's items (Data.SetItemLevel); nil when
--- unknown.
-local function ItemLevelOf(set)
-    if set.worn then
-        return set.il and set.il > 0 and set.il / 100 or nil
-    end
-    return ns.Data.SetItemLevel(set)
-end
-
 -- Slots -------------------------------------------------------------------------------
 
 local function SlotOnEnter(button)
@@ -382,10 +372,12 @@ function GearPanel.Refresh()
         panel.SetName:SetText(set.worn and SetLabel(set) or set.n)
     end
     panel.SetIcon:SetTexture(set.worn and WORN_ICON or set.i > 0 and set.i or QUESTION_MARK)
-    local level = ItemLevelOf(set)
+    -- Worked out from the items, also for what the member wears, so that it
+    -- agrees with ours whatever version the member has.
+    local level = ns.Data.SetItemLevel(set)
     panel.ItemLevel:SetShown(level ~= nil)
     if level then
-        panel.ItemLevel:SetText(("%s %.1f"):format(STAT_AVERAGE_ITEM_LEVEL or L["Item level"], level))
+        panel.ItemLevel:SetText(ns.ItemLevelText(level))
     end
     -- The talents button shows the build's main tree, greyed when its
     -- talents are not shared.

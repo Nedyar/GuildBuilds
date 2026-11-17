@@ -20,8 +20,8 @@ them. It also ties your own gear sets to your talents.
 - **Gear beside the talents.** The build's gear set shows in a panel beside
   the talent window, its items by slot as in the character window, with
   their tooltips (shift-click links one, control-click tries it on), and
-  its item level under its icon: the average of its items, without shirt
-  and tabard. A slot the set leaves as it is (ignored in the Equipment
+  its item level under its icon (none for a set that leaves slots as they
+  are). A slot the set leaves as it is (ignored in the Equipment
   Manager) shows the game's mark. A build with more sets has a menu to pick
   one, its default first. When only the
   gear is shared, the panel opens beside the guild window. A small button
@@ -44,12 +44,25 @@ them. It also ties your own gear sets to your talents.
   leave your computer; taking something back removes it from the guild's
   copies too.
 - **The gear you wear.** While the talents in use share their gear, what
-  you wear is shared too (each item with its item level, and your average
-  item level), together with the points you have not spent yet. In the
-  gear panel of those talents it comes last, as "Equipped" (with the
-  average item level), also for a build without gear sets. Other addons
+  you wear is shared too (each item with its item level, and the item level
+  of all of it), together with the points you have not spent yet. In the
+  gear panel of those talents it comes last, as "Equipped" (with its item
+  level), also for a build without gear sets. Other addons
   can read it from the guild's records too, such as the exporter for the
   guild's Discord bot.
+- **Your item level.** Under the stats of the character window, a row with
+  the item level of what you wear now (from level 10, as the game shows
+  one). The tooltip of each set in the Equipment Manager ends with the
+  item level of the items in the set; a set that leaves slots as they are
+  shows none.
+- **One item level everywhere.** Every item level the addon shows is
+  worked out the same way, with one decimal: the levels of 17 slots (all
+  but shirt and tabard) over 17, an empty slot counting 0 and a two-handed
+  weapon with nothing in the off hand counting twice. That is the game's
+  way, but with the ranged slot, which the game's own average leaves out
+  though it holds the main weapon of many hunters and the relics and
+  totems of other classes. The same items always give the same level: in
+  the character window, in a set's tooltip and in the gear panel.
 - **Room for the icons.** The Class column gets just wide enough for the
   class icon and two more, and the Note column, the one that stretches,
   gives up that room; the other columns keep their width.

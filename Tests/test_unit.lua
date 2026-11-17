@@ -127,9 +127,15 @@ H.check(BrokenGear(function(q) q[1].ig = "3" end), "slots left that are not a li
 local older = H.DeepCopy(geared)
 older.s[2].q[1].ig, older.s[2].q[1].it[1].il = nil, nil
 H.check(ns.Same(Data.CleanRecord(older, now).s[2].q, older.s[2].q), "sets from 0.2, without them, pass")
-H.eq(Data.SetItemLevel({ it = { { s = 1, il = 60 }, { s = 4, il = 1 }, { s = 18, il = 0 }, { s = 5, il = 70 }, { s = 19, il = 5 } } }), 65,
-    "a set's item level: the average of the levels known, without shirt and tabard")
-H.eq(Data.SetItemLevel({ it = { { s = 1 } } }), nil, "none when no level is known")
+H.eq(Data.SetItemLevel({ it = { { s = 1, il = 60 }, { s = 4, il = 1 }, { s = 18, il = 50 }, { s = 5, il = 70 }, { s = 19, il = 5 } } }),
+    180 / 17, "an item level: 17 slots with the ranged one, empty ones 0, without shirt and tabard")
+world.itemSlots[3000] = "INVTYPE_2HWEAPON"
+H.eq(Data.SetItemLevel({ it = { { s = 16, i = "item:3000", il = 40 } } }), 80 / 17, "a two-handed weapon counts twice")
+H.eq(Data.SetItemLevel({ it = { { s = 16, i = "item:3000", il = 40 }, { s = 17, i = "item:3001", il = 8 } } }), 48 / 17,
+    "but once with something in the off hand")
+H.eq(Data.SetItemLevel({ it = { { s = 1 } } }), nil, "none when a level it needs is not known")
+H.eq(Data.SetItemLevel({ it = { { s = 4 }, { s = 1, il = 17 } } }), 1, "the shirt's is not needed")
+H.eq(Data.SetItemLevel({ it = { { s = 1, il = 17 } }, ig = { 3 } }), nil, "none for a set that leaves slots as they are")
 H.check(BrokenGear(function(q)
     for i = #q + 1, Pack.LIMITS.sets + 1 do
         q[i] = { n = "Set" .. i, i = 0, it = {} }

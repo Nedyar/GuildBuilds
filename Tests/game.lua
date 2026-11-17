@@ -1,7 +1,7 @@
 -- What the game gives Guild Builds that LibGuildSync's shared harness does
 -- not simulate: builds as import strings, the roster rows' class icon and
--- name, the game's talent window, the Equipment Manager's gear sets and
--- their menu, and combat. Sizes, widths, textures and titles set on the
+-- name, the game's talent window, the Equipment Manager's gear sets, their
+-- menu and their tooltips, the character window's stats, and combat. Sizes, widths, textures and titles set on the
 -- fake frames are kept for the tests to check.
 return function(H)
     H.FrameMethods.SetWidth = function(self, width)
@@ -200,6 +200,56 @@ return function(H)
         end
     end
 
+    -- A row of the character window's stats list.
+    H.TemplateRegions.CharacterStatFrameScrollBoxLabelElementTemplate = {
+        Label = "FontString", Value = "FontString", Background = "Texture",
+    }
+
+    -- The character window's stats (CharacterStatsPaneScrollBox, hidden
+    -- until a test shows it), PaperDollFrame_UpdateStats, called by a test
+    -- when the game would, and the game's texts for the item level.
+    -- A set's tooltip runs the post-calls added for its kind
+    -- (TooltipDataProcessor), whether the game fills it from the set's ID
+    -- (SetEquipmentSet) or from an action button holding it (SetAction).
+    local function CharacterWindow(client, env)
+        local pane = H.NewObject(client, "Frame")
+        pane.ScrollBox = H.NewObject(client, "Frame")
+        pane:Hide()
+        env.CharacterStatsPaneScrollBox = pane
+        env.MIN_PLAYER_LEVEL_FOR_ITEM_LEVEL_DISPLAY = 10
+        env.PaperDollFrame_UpdateStats = function() end
+        env.STAT_FORMAT, env.PAPERDOLLFRAME_TOOLTIP_FORMAT = "%s:", "%s"
+        env.HIGHLIGHT_FONT_COLOR_CODE, env.FONT_COLOR_CODE_CLOSE = "|cffffffff", "|r"
+        env.STAT_AVERAGE_ITEM_LEVEL_TOOLTIP = "The average item level of your equipment."
+
+        client.tooltipPostCalls = {}
+        env.Enum.TooltipDataType = { EquipmentSet = 14 }
+        env.TooltipDataProcessor = {
+            AddTooltipPostCall = function(kind, fn)
+                client.tooltipPostCalls[kind] = client.tooltipPostCalls[kind] or {}
+                table.insert(client.tooltipPostCalls[kind], fn)
+            end,
+        }
+        local tooltip = env.GameTooltip
+        local function Fill(self, getterName, arg, setID)
+            local set = client.sets[setID]
+            self._text, self._lines = set.name, { set.name }
+            self._info = { getterName = getterName, getterArgs = { n = 1, arg } }
+            for _, fn in ipairs(client.tooltipPostCalls[14] or {}) do
+                fn(self, { type = 14, lines = {} })
+            end
+        end
+        tooltip.SetEquipmentSet = function(self, setID)
+            Fill(self, "GetEquipmentSet", setID, setID)
+        end
+        tooltip.SetAction = function(self, slot)
+            Fill(self, "GetAction", slot, client.actionSets and client.actionSets[slot])
+        end
+        tooltip.GetProcessingTooltipInfo = function(self)
+            return self._info
+        end
+    end
+
     -- Opens the settings menu of a set as the game does: the mouse is on its
     -- settings button, whose parent is the set's button. Returns its entries.
     function H.OpenSetMenu(client, setID)
@@ -257,6 +307,7 @@ return function(H)
             end
             env.TALENTS = "Talents"
             EquipmentSets(client, env)
+            CharacterWindow(client, env)
             return env
         end
         return world

@@ -45,14 +45,15 @@ function Equipped.Read()
     return items
 end
 
--- The average item level of what is worn, in hundredths, or nil.
-function Equipped.ReadItemLevel()
-    local _, equipped = ns.Try(GetAverageItemLevel)
-    equipped = Number(equipped)
-    if not equipped or equipped < 0 then
+-- The item level of what is worn (items: as Equipped.Read gives them), in
+-- hundredths, worked out as every item level the addon shows
+-- (Data.SetItemLevel), or nil.
+function Equipped.ReadItemLevel(items)
+    local level = ns.Data.SetItemLevel({ it = items or Equipped.Read() })
+    if not level then
         return nil
     end
-    return math.min(math.floor(equipped * 100 + 0.5), LIMITS.itemLevel * 100)
+    return math.min(math.floor(level * 100 + 0.5), LIMITS.itemLevel * 100)
 end
 
 -- Whether what we wear goes to the guild now.
@@ -69,7 +70,8 @@ function Equipped.Update()
     end
     local worn, level
     if Equipped.IsShared() then
-        worn, level = Equipped.Read(), Equipped.ReadItemLevel()
+        worn = Equipped.Read()
+        level = Equipped.ReadItemLevel(worn)
     end
     if ns.Same(record.w, worn) and record.il == level then
         return

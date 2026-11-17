@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 - Your item level
+
+- **Item level in the character window**: under the stats, a row with the item level of what you wear now, from level 10 as the game shows one.
+- **Item level of each gear set**: the tooltip of a set in the Equipment Manager ends with the item level of the items in the set. A set that leaves slots as they are shows none, here and in the gear panel.
+- **One item level everywhere**, with one decimal: the levels of 17 slots (all but shirt and tabard) over 17, an empty slot counting 0 and a two-handed weapon with nothing in the off hand counting twice. That is the game's way, but with the ranged slot, which the game's own average leaves out though it holds the main weapon of many hunters and the relics and totems of other classes. The same items give the same level in the character window, in a set's tooltip and in the gear panel, also for "Equipped" (0.3 showed the game's average there, and the plain average of the items for sets).
+- The item level shared with what you wear is worked out this way too, so the guild's Discord bot gets this figure from members on 0.4. Members on 0.3 and 0.4 share everything with each other.
+
 ## 0.3.0 - Item levels and slots left as they are
 
 - **Item level in the gear panel**: under the icon of the set shown, its item level, the average of its items (shirt and tabard left out, as the game does), and, for "Equipped", the game's own average item level.

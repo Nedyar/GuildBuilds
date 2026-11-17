@@ -219,19 +219,49 @@ function Data.BuildOf(record, group)
     end
 end
 
--- The average level of a set's items whose level is known, but for the
--- shirt and the tabard, which the game leaves out of the item level too; nil
--- when none is known.
-local NOT_COUNTED = { [4] = true, [19] = true }
+-- The slots an item level counts: all but the shirt (4) and the tabard
+-- (19). The game's own average (GetAverageItemLevel) leaves out the ranged
+-- slot too, as retail has none; here it counts, as it holds the main weapon
+-- of many hunters, and the relics, totems and the like of other classes.
+local COUNTED = { 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 }
+local MAIN_HAND, OFF_HAND = 16, 17
 
+local function IsTwoHanded(itemString)
+    local itemID = tonumber(type(itemString) == "string" and itemString:match("^item:(%d+)") or nil)
+    local equipLocation = itemID and C_Item and select(4, ns.Try(C_Item.GetItemInfoInstant, itemID))
+    return equipLocation == "INVTYPE_2HWEAPON"
+end
+
+-- The item level of a set, or of the items worn ({ it = items }): as the
+-- game works it out, plus the ranged slot: the levels in the slots it
+-- counts, over their number (17), an empty slot counting 0 and a
+-- two-handed weapon with nothing in the off hand counting twice. Every
+-- item level the addon shows comes from here, so they all agree. nil for a
+-- set that leaves slots as they are (what it ends up wearing is not the
+-- set's), or when a level it needs is not known.
 function Data.SetItemLevel(set)
-    local total, count = 0, 0
+    if set.ig and #set.ig > 0 then
+        return nil
+    end
+    local bySlot = {}
     for _, item in ipairs(set.it or {}) do
-        if not NOT_COUNTED[item.s] and item.il and item.il > 0 then
-            total, count = total + item.il, count + 1
+        bySlot[item.s] = item
+    end
+    local total = 0
+    for _, slot in ipairs(COUNTED) do
+        local item = bySlot[slot]
+        if item then
+            if not item.il or item.il <= 0 then
+                return nil
+            end
+            total = total + item.il
         end
     end
-    return count > 0 and total / count or nil
+    local main = bySlot[MAIN_HAND]
+    if main and not bySlot[OFF_HAND] and IsTwoHanded(main.i) then
+        total = total + main.il
+    end
+    return total / #COUNTED
 end
 
 -- The gear a member's build shows: its sets, the default one first, then

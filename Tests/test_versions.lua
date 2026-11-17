@@ -3,7 +3,7 @@ local H = ...
 -- Members on the last release and members on this version share one guild:
 -- both must keep talking. The release is taken from its git tag
 -- (H.Release).
-local RELEASE = "v0.2.0"
+local RELEASE = "v0.3.0"
 
 H.section("Versions: against " .. RELEASE)
 local old = H.Release(RELEASE)
@@ -62,19 +62,18 @@ for _, case in ipairs({
     world:RunFor(300)
     H.check(HasBuilds(RecordOf(second, first)), label .. ": the one who logged in later has the other's builds")
     H.check(HasBuilds(RecordOf(first, second)), label .. ": and the other way round")
-    -- This version's sets also carry their item levels and the slots they
-    -- leave as they are, which the release skips.
+    -- Both share the sets with their item levels and the slots they leave
+    -- as they are (0.3), and the items worn (0.2).
     local current = firstAddons and second or first
     local release = firstAddons and first or second
-    local own = current.ns.Data.GetOwnRecord(false).s[1].q[1]
-    H.check(own.it[1].il == 76 and H.SameList(own.ig, { 3 }), label .. ": this version shares item levels and slots left")
     local atRelease = RecordOf(release, current)
-    H.check(atRelease.s[1].q ~= nil and atRelease.s[1].q[1].it[1].s == 1 and atRelease.s[1].q[1].ig == nil,
-        label .. ": the release gets the set, and skips them")
     local atCurrent = RecordOf(current, release)
-    H.check(atCurrent.s[1].q ~= nil and atCurrent.s[1].q[1].ig == nil and atCurrent.s[1].q[1].it[1].il == nil,
-        label .. ": the release's sets come without them")
-    H.check(atRelease.w ~= nil and atCurrent.w ~= nil, label .. ": both share the items worn (0.2)")
+    for _, case in ipairs({ { atRelease, "the release gets" }, { atCurrent, "this version gets" } }) do
+        local set = case[1].s[1].q and case[1].s[1].q[1]
+        H.check(set ~= nil and set.it[1].il == 76 and H.SameList(set.ig, { 3 }),
+            label .. ": " .. case[2] .. " the set, with its item levels and slots left")
+    end
+    H.check(atRelease.w ~= nil and atCurrent.w ~= nil, label .. ": both share the items worn")
     -- A change while both are online.
     current.talents.groups[1][103] = 1
     world:FireEvent(current, "TRAIT_CONFIG_UPDATED", 501)
