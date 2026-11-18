@@ -65,13 +65,75 @@ copy = WaitForCopy()
 local mns = mage.ns
 local gear = mns.Data.GearOf(copy, 1)
 H.check(#gear == 1 and gear[1].worn and #gear[1].it == 2, "a build without sets still has gear: what its owner wears")
-H.eq(#mns.Data.GearOf(copy, 2), 0, "only with the talents in use")
+H.eq(#mns.Data.GearOf(copy, 2), 1, "with the talents not in use too")
 H.check(mns.GearPanel.Show(hunter.guid, 1, mage.env.UIParent), "the gear panel shows it")
 local panel = mns.GearPanel.panel
 H.check(panel.SetName._shown and panel.SetName:GetText() == "Equipped", "as Equipped")
 H.check(panel.ItemLevel._shown and panel.ItemLevel:GetText() == "Item level 5.0", "with its item level under its icon")
 H.eq(mns.GearPanel.buttons[1].item, "item:16939:0:0:0:0:0:0::::0", "and the items worn")
 mns.GearPanel.Hide()
+
+H.section("Worn: one of the sets")
+-- Raid is what the hunter wears (the helm and the bow); Helm only is not.
+hunter.sets[0] = { name = "Raid", icon = 132222, items = { [1] = 16939, [18] = 2504 },
+    locations = { [1] = H.WORN + 1, [18] = H.WORN + 18 } }
+hunter.sets[1] = { name = "Helm only", icon = 133070, items = { [1] = 16939 }, locations = { [1] = H.WORN + 1 } }
+ns.Sets.Assign(1, 0, true)
+ns.Sets.Assign(1, 1, true)
+copy = WaitForCopy()
+gear = mns.Data.GearOf(copy, 1)
+H.check(#gear == 2 and gear[1].equipped and not gear[2].equipped, "the set worn is marked, and Equipped is not added")
+H.check(copy.s[1].q[1].equipped == nil, "on a copy: the record is left as it is")
+mns.GearPanel.Show(hunter.guid, 1, mage.env.UIParent)
+local menu = H.MenuOf(panel.SetMenu)
+H.check(#menu == 2 and menu[1].text == "Raid (equipped)" and menu[2].text == "Helm only",
+    "in the menu, the set worn says so")
+ns.Sets.SetDefault(1, 1)
+copy = WaitForCopy()
+mns.GearPanel.Show(hunter.guid, 1, mage.env.UIParent)
+menu = H.MenuOf(panel.SetMenu)
+H.check(menu[1].text == "Helm only" and menu[2].text == "Raid (equipped)", "also when it is not the default")
+ns.Sets.Assign(1, 1, false)
+copy = WaitForCopy()
+mns.GearPanel.Show(hunter.guid, 1, mage.env.UIParent)
+H.check(not panel.SetMenu._shown and panel.SetName:GetText() == "Raid (equipped)", "alone, by its name")
+ns.Sets.Assign(1, 0, false)
+ns.Sets.Assign(1, 1, true)
+copy = WaitForCopy()
+mns.GearPanel.Show(hunter.guid, 1, mage.env.UIParent)
+menu = H.MenuOf(panel.SetMenu)
+H.check(#menu == 2 and menu[1].text == "Helm only" and menu[2].text == "Equipped",
+    "a set not worn leaves Equipped in the menu")
+mns.GearPanel.Hide()
+ns.Sets.Assign(1, 1, false)
+
+H.section("Worn: slots a set leaves as they are")
+-- Leave: a chest piece not found, and the head, the shoulders and the ranged
+-- slot left as they are; the hunter wears the helm and the bow there.
+hunter.sets[2] = { name = "Leave", icon = 132222, items = { [5] = 6000, [1] = 1, [3] = 1, [18] = 1 },
+    locations = { [5] = -1 }, ignored = { [1] = true, [3] = true, [18] = true } }
+ns.Sets.Assign(1, 2, true)
+copy = WaitForCopy()
+mns.GearPanel.Show(hunter.guid, 1, mage.env.UIParent)
+local slots = mns.GearPanel.buttons
+local MARK = "Interface\\PaperDollInfoFrame\\UI-GearManager-LeaveItem-Transparent"
+H.eq(slots[1].item, "item:16939:0:0:0:0:0:0::::0", "a slot left as it is shows what the member wears there")
+H.check(slots[1].Icon._shown and slots[1].Ignored._shown and slots[1].Ignored._texture == MARK, "with the game's mark over it")
+H.check(slots[1].Ignored._alpha == 0.5 and slots[1].Ignored._point[1] == "CENTER", "see-through, over the whole slot")
+H.check(slots[18].item ~= nil and slots[18].Ignored._shown and slots[18].Ignored._alpha == 0.5
+    and slots[18].Ignored._point[1] == "CENTER", "on a weapon too")
+H.check(slots[3].item == nil and slots[3].Ignored._shown and slots[3].Ignored._alpha == 1
+    and slots[3].Ignored._point[1] == "CENTER", "nothing worn there: the mark alone, as the game shows it")
+H.check(slots[5].item == "item:6000" and not slots[5].Ignored._shown, "the set's own items as ever")
+slots[1]._scripts.OnEnter(slots[1])
+local tipLines = mage.env.GameTooltip._lines
+H.check(tipLines[1] == slots[1].item and tipLines[#tipLines] == "This set leaves this slot as it is.",
+    "its tooltip: the item worn, and that the set leaves it on")
+slots[3]._scripts.OnEnter(slots[3])
+H.eq(mage.env.GameTooltip._lines[1], "This set leaves this slot as it is.", "an empty one says only that")
+mns.GearPanel.Hide()
+ns.Sets.Assign(1, 2, false)
+hunter.sets[2] = nil
 
 H.section("Worn: not shared")
 ns.Sets.SetShared(2, false)
@@ -93,6 +155,20 @@ H.eq(Own().w, nil, "and gone again with the Primary ones")
 ns.Sets.SetShared(1, true)
 world:RunFor(3)
 H.check(Own().w ~= nil, "back")
+H.eq(#world.errors, 0, "no errors")
+
+H.section("Worn: the settings of 0.4")
+local older = world:NewClient("Older Name", {
+    talents = { active = 1, groups = { [1] = { [101] = 5 } } },
+    gear = { [1] = { link = HELM, il = 76 } },
+})
+-- Its saved data: the gear of both spec groups unticked, one box each.
+older.saved = { GuildBuildsDB = { own = { [older.guid] = { gearHidden = { [1] = true, [2] = true } } } } }
+world:Login(older)
+world:RunFor(5)
+H.check(older.ns.Sets.IsShared(1) and older.ns.Sets.IsShared(2) and older.ns.Data.OwnState().gearReset == 1,
+    "ticked again at login, both")
+H.check(older.ns.Data.GetOwnRecord(false).w ~= nil, "what is worn too")
 H.eq(#world.errors, 0, "no errors")
 
 H.section("Worn: packed")

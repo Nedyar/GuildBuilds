@@ -170,6 +170,14 @@ local function Setup()
             hooksecurefunc(frame, method, ShareBox.Update)
         end
     end
+    -- A click on a tab reaches the window's SetTab as the game kept it when
+    -- the window loaded, missing the hook above; every change of tab marks
+    -- the tab selected on the window's tab system, though. Without this the
+    -- boxes kept the tab shown before, and changed its settings.
+    local tabs = frame.TabSystem
+    if tabs and type(tabs.SetTabVisuallySelected) == "function" then
+        hooksecurefunc(tabs, "SetTabVisuallySelected", ShareBox.Update)
+    end
     ShareBox.Update()
 end
 

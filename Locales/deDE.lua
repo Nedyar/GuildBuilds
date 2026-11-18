@@ -46,7 +46,7 @@ ns.RegisterLocale("deDE", function(L)
     L["Equip the default gear set when switching talents"] = "Beim Talentwechsel das Standardset anlegen"
     L["Use with the %s talents"] = "Mit den Talenten verwenden: %s"
     L["Default gear set of the %s talents"] = "Standardset der Talente: %s"
-    L["%s (default)"] = "%s (Standard)"
+    L["%s (equipped)"] = "%s (angelegt)"
     L["Equipped"] = "Angelegt"
     L["Item level"] = "Gegenstandsstufe"
     L["This set leaves this slot as it is."] = "Dieses Set lässt diesen Platz unverändert."

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.0 - Both builds of a member
+
+- **Primary and Secondary tabs on a member's talents**: open the talents of a member with dual spec and the talent window shows tabs like its own, to change between their two builds. The member's active one is ticked, and the tab of talents they do not share is locked, saying so. The gear beside the talents follows the tab.
+- **Fix: the boxes at the bottom of your talent window follow its tabs.** Changing between Primary and Secondary did not update "Share talents", "Share gear" and the gear sets menu: they kept showing, and changing, the tab seen before. "/gbuilds status" says what each spec group shares.
+- **"Share gear" ticked again for both spec groups**, once, as this version starts: up to 0.4 the boxes may have unticked it without you meaning it. Each spec group keeps its own box; untick it again if you do not want that gear shared. Sharing talents is left as it is.
+- **"Equipped" with both builds**: what a member wears now shows in the gear panel of either of their builds, not only beside the talents in use, so talents without gear sets show it too.
+- **The set worn, marked**: when what a member wears is one of the build's gear sets, the gear panel names that set "(equipped)" instead of adding "Equipped" to the menu. The menu no longer marks the default set: its sets go by their names, the default first.
+- **Slots a set leaves as they are show what the member wears there**, under the game's mark, made see-through so the item shows. With nothing worn there, the mark shows alone, as before. The item's tooltip adds that the set leaves it on.
+- Nothing changes in what is shared: members on 0.4 and 0.5 share everything with each other.
+
 ## 0.4.0 - Your item level
 
 - **Item level in the character window**: under the stats, a row with the item level of what you wear now, from level 10 as the game shows one.

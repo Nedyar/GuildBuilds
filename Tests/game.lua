@@ -34,6 +34,10 @@ return function(H)
     H.FrameMethods.GetEffectiveScale = function(self)
         return self._scale or 1
     end
+    -- Drawing strata, as set.
+    H.FrameMethods.SetFrameStrata = function(self, strata)
+        self._strata = strata
+    end
     -- Drawing levels, as set (the game starts a frame at 1).
     H.FrameMethods.SetFrameLevel = function(self, level)
         self._level = level
@@ -294,6 +298,50 @@ return function(H)
         return table.concat(parts, "x")
     end
 
+    -- The game's tab systems (TabSystemTemplate), as frames made from it get
+    -- them: tabs added by name (tabs, each with its text, whether it is
+    -- enabled, its errorReason and whether it is marked active), the one
+    -- selected (selectedTabID), and SetTab, which a click on a tab calls: it
+    -- asks the callback, which may keep the tab from being selected.
+    local function TabSystems(client, env)
+        local CreateFrame = env.CreateFrame
+        env.CreateFrame = function(objectType, name, parent, template)
+            local frame = CreateFrame(objectType, name, parent, template)
+            if template == "TabSystemTemplate" then
+                frame.tabs = {}
+                rawset(frame, "SetTabSelectedCallback", function(self, callback)
+                    self.callback = callback
+                end)
+                rawset(frame, "AddTab", function(self, text)
+                    local tab = { text = text, tabID = #self.tabs + 1, enabled = true }
+                    function tab.SetIsActive(button, active)
+                        button.active = active
+                    end
+                    self.tabs[tab.tabID] = tab
+                    return tab.tabID
+                end)
+                rawset(frame, "GetTabButton", function(self, tabID)
+                    return self.tabs[tabID]
+                end)
+                rawset(frame, "SetTabEnabled", function(self, tabID, enabled, errorReason)
+                    self.tabs[tabID].enabled, self.tabs[tabID].errorReason = enabled, errorReason
+                end)
+                rawset(frame, "SetTabVisuallySelected", function(self, tabID)
+                    self.selectedTabID = tabID
+                end)
+                rawset(frame, "SetTab", function(self, tabID, isUserAction)
+                    if not self.callback(tabID, isUserAction) then
+                        self:SetTabVisuallySelected(tabID)
+                    end
+                end)
+            end
+            return frame
+        end
+        env.CreateFramePool = function()
+            return {}
+        end
+    end
+
     -- Every world made by the tests gets it.
     local NewWorld = H.NewWorld
     function H.NewWorld(options)
@@ -308,6 +356,7 @@ return function(H)
             env.TALENTS = "Talents"
             EquipmentSets(client, env)
             CharacterWindow(client, env)
+            TabSystems(client, env)
             return env
         end
         return world
@@ -357,15 +406,25 @@ return function(H)
             self.title = self.inspectString and "Linked Talents (Hunter Hunter)" or "Talents"
         end)
         -- Its talents page: tabs 1 and 2 are the spec groups (Primary and
-        -- Secondary), and while it shows someone else's build it says so.
+        -- Secondary), and while it shows someone else's build it says so
+        -- and keeps its tabs.
         local talents = H.NewObject(client, "Frame")
         talents.Background = H.NewObject(client, "Texture")
+        talents.BackgroundBorder = H.NewObject(client, "Texture")
+        talents.TabSystem = H.NewObject(client, "Frame")
+        rawset(talents.TabSystem, "SetTabVisuallySelected", function(self, tab)
+            self.selectedTabID = tab
+        end)
         talents.tab = 1
         rawset(talents, "GetTab", function(self)
             return self.tab
         end)
         rawset(talents, "SetTab", function(self, tab)
+            if frame.inspectString then
+                return
+            end
             self.tab = tab
+            self.TabSystem:SetTabVisuallySelected(tab)
         end)
         rawset(talents, "IsInspecting", function()
             return frame.inspectString ~= nil
@@ -395,6 +454,12 @@ return function(H)
             OpenShown()
         end
         local window = { frame = frame, talents = talents, opened = {} }
+        -- A click on one of its tabs: the game calls the SetTab the page had
+        -- when it loaded (kept in a closure), so hooks on it miss the click.
+        local LoadedSetTab = talents.SetTab
+        function window.ClickTab(tab)
+            LoadedSetTab(talents, tab)
+        end
         window.globals = {
             PlayerSpellsFrame = frame,
             PlayerSpellsUtil = {

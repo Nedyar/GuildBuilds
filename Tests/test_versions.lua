@@ -3,7 +3,7 @@ local H = ...
 -- Members on the last release and members on this version share one guild:
 -- both must keep talking. The release is taken from its git tag
 -- (H.Release).
-local RELEASE = "v0.3.0"
+local RELEASE = "v0.4.0"
 
 H.section("Versions: against " .. RELEASE)
 local old = H.Release(RELEASE)

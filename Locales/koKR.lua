@@ -46,7 +46,7 @@ ns.RegisterLocale("koKR", function(L)
     L["Equip the default gear set when switching talents"] = "특성을 바꿀 때 기본 장비 구성 착용"
     L["Use with the %s talents"] = "특성과 함께 사용: %s"
     L["Default gear set of the %s talents"] = "특성의 기본 장비 구성: %s"
-    L["%s (default)"] = "%s (기본)"
+    L["%s (equipped)"] = "%s (착용 중)"
     L["Equipped"] = "착용 중"
     L["Item level"] = "아이템 레벨"
     L["This set leaves this slot as it is."] = "이 장비 구성은 이 칸을 그대로 둡니다."

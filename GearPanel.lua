@@ -40,6 +40,9 @@ local WORN_ICON = "Interface\\Icons\\INV_Chest_Chain_05"  -- for what the member
 -- What the game's character window shows on a slot a set leaves as it is.
 local IGNORED_TEXTURE = "Interface\\PaperDollInfoFrame\\UI-GearManager-LeaveItem-Transparent"
 local IGNORED_SIZE = 40
+-- Over what the member wears in such a slot, the mark is see-through, so the
+-- item shows.
+local IGNORED_ALPHA = 0.5
 local TITLE_INSET = 58  -- from each side to the title, when it cannot be measured
 local TITLE_GAP = 2     -- between the title and the talents button
 local QUESTION_MARK = 134400
@@ -70,18 +73,19 @@ local function GearShown()
     return ns.Data.GearOf(guild and guild.members[current.guid], current and current.gr)
 end
 
--- A set's name, or "Equipped" for what the member wears.
-local function SetLabel(set, index)
+-- A set's name, with "(equipped)" for the one the member wears, or
+-- "Equipped" for what the member wears when it is none of the sets.
+local function SetLabel(set)
     if set.worn then
         return L["Equipped"]
     end
-    return index == 1 and L["%s (default)"]:format(set.n) or set.n
+    return set.equipped and L["%s (equipped)"]:format(set.n) or set.n
 end
 
 -- Slots -------------------------------------------------------------------------------
 
 local function SlotOnEnter(button)
-    if button.ignored then
+    if button.ignored and not button.item then
         GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
         GameTooltip:SetText(L["This set leaves this slot as it is."], 1, 1, 1, 1, true)
         GameTooltip:Show()
@@ -92,7 +96,19 @@ local function SlotOnEnter(button)
     end
     GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
     GameTooltip:SetHyperlink(button.item)
+    if button.ignored then
+        -- What the member wears there, which the set leaves on.
+        local r, g, b = NORMAL_FONT_COLOR:GetRGB()
+        GameTooltip:AddLine(L["This set leaves this slot as it is."], r, g, b, true)
+    end
     GameTooltip:Show()
+end
+
+-- The mark of a slot the set leaves as it is: alone, as the game shows it,
+-- when nothing is worn there; see-through over the item worn otherwise.
+local function ShowIgnored(button, ignored, overItem)
+    button.Ignored:SetShown(ignored)
+    button.Ignored:SetAlpha(overItem and IGNORED_ALPHA or 1)
 end
 
 local function SlotOnClick(button)
@@ -162,7 +178,7 @@ end
 
 local function SetMenu(owner, root)
     for index, set in ipairs(GearShown()) do
-        root:CreateRadio(SetLabel(set, index), function()
+        root:CreateRadio(SetLabel(set), function()
             return GearPanel.current and GearPanel.current.index == index
         end, function()
             if GearPanel.current then
@@ -369,7 +385,7 @@ function GearPanel.Refresh()
     if several then
         panel.SetMenu:GenerateMenu()
     else
-        panel.SetName:SetText(set.worn and SetLabel(set) or set.n)
+        panel.SetName:SetText(SetLabel(set))
     end
     panel.SetIcon:SetTexture(set.worn and WORN_ICON or set.i > 0 and set.i or QUESTION_MARK)
     -- Worked out from the items, also for what the member wears, so that it
@@ -393,13 +409,24 @@ function GearPanel.Refresh()
     for _, slot in ipairs(set.ig or {}) do
         leaves[slot] = true
     end
+    -- A slot the set leaves as it is shows what the member wears there, when
+    -- they share it.
+    local worn = {}
+    for _, item in ipairs(record.w or {}) do
+        worn[item.s] = item.i
+    end
     local loading = false
     for slot, button in pairs(buttons) do
-        if not ShowItem(button, items[slot]) then
+        local ignored = leaves[slot] == true
+        local itemString = items[slot]
+        if ignored then
+            itemString = worn[slot]
+        end
+        if not ShowItem(button, itemString) then
             loading = true
         end
-        button.ignored = leaves[slot] == true
-        button.Ignored:SetShown(button.ignored)
+        button.ignored = ignored
+        ShowIgnored(button, ignored, itemString ~= nil)
     end
     -- Item qualities the client did not have yet: drawn again once loaded.
     if loading then

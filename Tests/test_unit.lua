@@ -136,6 +136,14 @@ H.eq(Data.SetItemLevel({ it = { { s = 16, i = "item:3000", il = 40 }, { s = 17, 
 H.eq(Data.SetItemLevel({ it = { { s = 1 } } }), nil, "none when a level it needs is not known")
 H.eq(Data.SetItemLevel({ it = { { s = 4 }, { s = 1, il = 17 } } }), 1, "the shirt's is not needed")
 H.eq(Data.SetItemLevel({ it = { { s = 1, il = 17 } }, ig = { 3 } }), nil, "none for a set that leaves slots as they are")
+local wornItems = { { s = 1, i = "item:100:5" }, { s = 18, i = "item:200" } }
+H.check(Data.IsWorn({ it = { { s = 1, i = "item:100" }, { s = 18, i = "item:200:0:7" } } }, wornItems),
+    "a set is what is worn when each slot holds its item (enchants aside)")
+H.check(not Data.IsWorn({ it = { { s = 1, i = "item:100" } } }, wornItems), "not with something worn where the set has nothing")
+H.check(Data.IsWorn({ it = { { s = 1, i = "item:100" } }, ig = { 18 } }, wornItems), "the slots it leaves as they are aside")
+H.check(not Data.IsWorn({ it = { { s = 1, i = "item:101" }, { s = 18, i = "item:200" } } }, wornItems), "not with another item")
+H.check(not Data.IsWorn({ it = { { s = 1, i = "item:100" }, { s = 18, i = "item:200" }, { s = 5, i = "item:300" } } }, wornItems),
+    "nor with an item of the set not worn")
 H.check(BrokenGear(function(q)
     for i = #q + 1, Pack.LIMITS.sets + 1 do
         q[i] = { n = "Set" .. i, i = 0, it = {} }

@@ -1,8 +1,8 @@
 -- Equipped.lua: what the player wears, shared with the guild together with
 -- the gear of the build in use: only while the active spec group's "Share
 -- gear" box is ticked (Sets.IsShared). The gear panel shows it as
--- "Equipped" (Data.GearOf); other addons read it from the records (w and
--- il, see Pack.lua).
+-- "Equipped", or marks the set it is (Data.GearOf); other addons read it
+-- from the records (w and il, see Pack.lua).
 local _, ns = ...
 
 local Equipped = {}

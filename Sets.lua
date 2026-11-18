@@ -163,8 +163,9 @@ local function Prune()
     end
 end
 
--- Whether the guild sees a spec group's sets: on until the player turns it
--- off.
+-- Whether the guild sees a spec group's sets (and what we wear while it is
+-- the active one): on until the player turns it off, for each spec group on
+-- its own.
 function Sets.IsShared(group)
     local hidden = ns.Data.OwnState().gearHidden
     return not (type(hidden) == "table" and hidden[group] == true)
@@ -180,6 +181,19 @@ function Sets.SetShared(group, shared)
     end
     state.gearHidden[group] = not shared or nil
     Changed()
+end
+
+-- "Share gear" ticked again for both spec groups, once per character (0.5):
+-- up to 0.4 the boxes at the bottom of the talent window did not follow its
+-- tabs, and unticking one could stop sharing the gear of the tab not shown.
+local GEAR_RESET = 1
+
+function Sets.ResetGearSharing()
+    local state = ns.Data.OwnState()
+    if (tonumber(state.gearReset) or 0) < GEAR_RESET then
+        state.gearHidden, state.gearOff = nil, nil
+        state.gearReset = GEAR_RESET
+    end
 end
 
 -- Whether switching spec groups equips the new one's default set: on until

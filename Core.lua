@@ -69,6 +69,7 @@ events:SetScript("OnEvent", function(self, event, name)
     elseif event == "PLAYER_LOGIN" then
         -- The library first: our name, the roster, the messages and the sync.
         Lib.Start(ns)
+        ns.Sets.ResetGearSharing()
         -- Each part starts on its own, so a failure in one (reported as a normal
         -- Lua error) does not stop the others.
         local parts = {

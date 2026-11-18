@@ -46,7 +46,7 @@ ns.RegisterLocale("ruRU", function(L)
     L["Equip the default gear set when switching talents"] = "Надевать комплект по умолчанию при смене талантов"
     L["Use with the %s talents"] = "Использовать с талантами: %s"
     L["Default gear set of the %s talents"] = "Комплект по умолчанию для талантов: %s"
-    L["%s (default)"] = "%s (по умолчанию)"
+    L["%s (equipped)"] = "%s (надето)"
     L["Equipped"] = "Надето"
     L["Item level"] = "Уровень предметов"
     L["This set leaves this slot as it is."] = "Этот комплект не меняет предмет в этой ячейке."

@@ -12,7 +12,8 @@
 -- While the window shows a member's build, a button left of its close
 -- button opens or closes the build's gear (greyed when its owner does not
 -- share it); the gear panel has the same button for the talents. Each only
--- opens and closes its own target.
+-- opens and closes its own target. For a member with dual spec, tabs like
+-- the window's own Primary and Secondary ones change between their builds.
 --
 -- Our own builds open the window as usual, where they can be changed.
 local _, ns = ...
@@ -67,6 +68,7 @@ function Viewer.UpdateTitle()
         frame:SetTitle(Viewer.current.title)
     end
     Viewer.UpdateGearButton()
+    Viewer.UpdateGroupTabs()
     ns.GearPanel.Check()
 end
 
@@ -117,6 +119,95 @@ function Viewer.ToggleGear()
     end
 end
 
+-- The spec group tabs: while the window shows the build of a member with
+-- two spec groups, tabs like its own Primary and Secondary ones (which the
+-- game hides while it shows someone else's talents) change between the
+-- member's two builds. The tab of a build whose talents are not shared is
+-- locked and says so; the member's active one is ticked, as ours is.
+local groupTabs
+local TAB_TEMPLATE = "ClassTalentsFrameTabTemplate"  -- the window's own tabs
+local TAB_LEVEL = 4010                               -- over the talents page's effects (HIGH, 4000)
+
+function Viewer.UpdateGroupTabs()
+    if not groupTabs then
+        return
+    end
+    local build, record = BuildShown()
+    local shown = build ~= nil and type(record.s) == "table" and #record.s > 1
+    groupTabs:SetShown(shown)
+    if not shown then
+        return
+    end
+    -- The texts first, with no tab selected: the game's tabs read the
+    -- selected one as locked.
+    groupTabs:SetTabVisuallySelected(nil)
+    for group = 1, 2 do
+        local other = ns.Data.BuildOf(record, group)
+        local shared = other ~= nil and other.x ~= nil
+        groupTabs:SetTabEnabled(group, shared, not shared and L["Its talents are not shared."] or nil)
+        local tab = groupTabs:GetTabButton(group)
+        if tab and tab.SetIsActive then
+            tab:SetIsActive(record.ag == group)
+        end
+    end
+    groupTabs:SetTabVisuallySelected(build.gr)
+end
+
+-- A click on a spec group tab: the member's build of that spec group, and
+-- its gear beside it if the gear of the build shown was there. Selecting
+-- the tab is left to UpdateGroupTabs, once the window shows the build.
+local function OnGroupTab(group)
+    local current = Viewer.IsShowing() and Viewer.current
+    ns.Debug("spec group tab %s clicked; showing %s", tostring(group), current and tostring(current.gr) or "no build of ours")
+    if not current or group == current.gr then
+        return true
+    end
+    local guid = current.guid
+    local gearShown = ns.GearPanel.IsShowing(guid, current.gr)
+    if not Viewer.ShowTalents(guid, group) then
+        return true
+    end
+    if gearShown then
+        local guild = ns.Data.CurrentGuild(false)
+        if #ns.Data.GearOf(guild and guild.members[guid], group) > 0 then
+            ns.GearPanel.Show(guid, group, Frame())
+        else
+            ns.GearPanel.Hide()
+        end
+    end
+    return true
+end
+
+-- The tabs, where the window has its own (ClassTalentsFrameTemplate's
+-- TabSystem), as its own are made.
+local function CreateGroupTabs(frame)
+    local talents = frame.TalentsFrame
+    if groupTabs or not talents then
+        return
+    end
+    groupTabs = CreateFrame("Frame", nil, talents, "TabSystemTemplate")
+    groupTabs.tabTemplate = TAB_TEMPLATE
+    groupTabs.minTabWidth, groupTabs.maxTabWidth = 150, 200
+    groupTabs.tabPool = CreateFramePool("BUTTON", groupTabs, TAB_TEMPLATE)
+    -- Above the talents page's own frames over that spot, which take the
+    -- mouse while it shows someone else's build (seen in game): the frame
+    -- of the talent buttons (raised over 1010) and its effects (HIGH, 4000).
+    -- Set before the tabs are made, so they are made there too.
+    groupTabs:SetFrameStrata("HIGH")
+    groupTabs:SetFrameLevel(TAB_LEVEL)
+    groupTabs:SetPoint("BOTTOMLEFT", talents.BackgroundBorder or talents, "TOPLEFT", 70, -4)
+    groupTabs:SetTabSelectedCallback(OnGroupTab)
+    groupTabs:AddTab(ns.GroupLabel(1))
+    groupTabs:AddTab(ns.GroupLabel(2))
+    groupTabs:Hide()
+    Viewer.groupTabs = groupTabs
+end
+
+local function UpdateButtons()
+    Viewer.UpdateGearButton()
+    Viewer.UpdateGroupTabs()
+end
+
 local function GearTooltip()
     GameTooltip:SetText(L["Gear"], 1, 1, 1)
     if #GearShown() > 0 then
@@ -138,7 +229,8 @@ local function HookTitle()
     gearButton = ns.TitleButton.New(frame, frame.CloseButton, Viewer.ToggleGear, GearTooltip)
     gearButton:Hide()
     Viewer.gearButton = gearButton
-    frame:HookScript("OnShow", Viewer.UpdateGearButton)
+    CreateGroupTabs(frame)
+    frame:HookScript("OnShow", UpdateButtons)
 end
 
 local function Close()
@@ -172,6 +264,7 @@ function Viewer.ShowTalents(guid, group)
     local build = ns.Data.BuildOf(record, group)
     if not (build and build.x) then
         -- Unknown, or not shared by its owner.
+        ns.Debug("talents %s of %s unknown or not shared", tostring(group), tostring(guid))
         return false
     end
     if not (PlayerSpellsUtil and PlayerSpellsUtil.InspectLoadout) then
@@ -247,5 +340,5 @@ function Viewer.Init()
     -- Hooked as soon as the window exists, in case the game opens it first.
     EventUtil.ContinueOnAddOnLoaded("Blizzard_PlayerSpells", HookTitle)
     -- A member may share or stop sharing while the window shows them.
-    ns.On("DataChanged", Viewer.UpdateGearButton)
+    ns.On("DataChanged", UpdateButtons)
 end

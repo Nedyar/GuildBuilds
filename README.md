@@ -17,13 +17,18 @@ them. It also ties your own gear sets to your talents.
   window shows that build, the way it shows a talent build linked in the
   chat: the member's whole class tree with their points, also while they are
   offline. Click it again to close it. Your own icons open your own talents.
+  For a member with dual spec, tabs like the window's own Primary and
+  Secondary ones change between their two builds (the member's active one
+  ticked, the one they do not share locked).
 - **Gear beside the talents.** The build's gear set shows in a panel beside
   the talent window, its items by slot as in the character window, with
   their tooltips (shift-click links one, control-click tries it on), and
   its item level under its icon (none for a set that leaves slots as they
   are). A slot the set leaves as it is (ignored in the Equipment
-  Manager) shows the game's mark. A build with more sets has a menu to pick
-  one, its default first. When only the
+  Manager) shows what the member wears there under the game's mark, or the
+  mark alone. A build with more sets has a menu to pick
+  one, its default first; the set the member wears says "(equipped)". When
+  only the
   gear is shared, the panel opens beside the guild window. A small button
   by each window's close button opens or closes the other one: the gear
   from the talents, the talents from the gear (greyed when that part is not
@@ -45,9 +50,10 @@ them. It also ties your own gear sets to your talents.
   copies too.
 - **The gear you wear.** While the talents in use share their gear, what
   you wear is shared too (each item with its item level, and the item level
-  of all of it), together with the points you have not spent yet. In the
-  gear panel of those talents it comes last, as "Equipped" (with its item
-  level), also for a build without gear sets. Other addons
+  of all of it), together with the points you have not spent yet. In the gear panel
+  of either of your builds it comes last, as "Equipped" (with its item
+  level), also for a build without gear sets; when it is one of the build's
+  sets, that set says "(equipped)" instead. Other addons
   can read it from the guild's records too, such as the exporter for the
   guild's Discord bot.
 - **Your item level.** Under the stats of the character window, a row with

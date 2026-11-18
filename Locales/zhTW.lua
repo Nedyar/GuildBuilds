@@ -46,7 +46,7 @@ ns.RegisterLocale("zhTW", function(L)
     L["Equip the default gear set when switching talents"] = "切換天賦時裝備預設裝備設定"
     L["Use with the %s talents"] = "用於天賦：%s"
     L["Default gear set of the %s talents"] = "天賦的預設裝備設定：%s"
-    L["%s (default)"] = "%s（預設）"
+    L["%s (equipped)"] = "%s（已裝備）"
     L["Equipped"] = "已裝備"
     L["Item level"] = "物品等級"
     L["This set leaves this slot as it is."] = "此裝備設定不會改變此欄位。"

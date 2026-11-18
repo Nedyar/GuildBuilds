@@ -264,21 +264,57 @@ function Data.SetItemLevel(set)
     return total / #COUNTED
 end
 
+local function ItemIDOf(itemString)
+    return type(itemString) == "string" and tonumber(itemString:match("^item:(%d+)")) or nil
+end
+
+-- Whether a set is what is worn (items: as in record.w): every slot it does
+-- not leave as it is holds the set's item (by its ID: enchants and gems may
+-- differ), or nothing where the set has nothing.
+function Data.IsWorn(set, items)
+    local worn, own, left = {}, {}, {}
+    for _, item in ipairs(items or {}) do
+        worn[item.s] = ItemIDOf(item.i)
+    end
+    for _, item in ipairs(set.it or {}) do
+        own[item.s] = ItemIDOf(item.i)
+    end
+    for _, slot in ipairs(set.ig or {}) do
+        left[slot] = true
+    end
+    for slot = 1, LIMITS.slot do
+        if not left[slot] and worn[slot] ~= own[slot] then
+            return false
+        end
+    end
+    return true
+end
+
 -- The gear a member's build shows: its sets, the default one first, then
--- what its owner wears, while it is their active build and they share it,
+-- what its owner wears now, whichever build is active, while they share it,
 -- as one more: { worn = true, i = 0, it = the items worn, il = the average
--- item level }. Empty when there is none.
+-- item level }. When what they wear is one of the sets, that set is marked
+-- instead (a copy with equipped = true). Empty when there is none.
 function Data.GearOf(record, group)
     local build = Data.BuildOf(record, group)
     local gear = {}
     if not build then
         return gear
     end
+    local worn = record.w and #record.w > 0 and record.w
+    local wornSet = false
     for _, set in ipairs(build.q or {}) do
+        if worn and Data.IsWorn(set, worn) then
+            local marked = { equipped = true }
+            for key, value in pairs(set) do
+                marked[key] = value
+            end
+            set, wornSet = marked, true
+        end
         gear[#gear + 1] = set
     end
-    if record.w and #record.w > 0 and record.ag == group then
-        gear[#gear + 1] = { worn = true, i = 0, it = record.w, il = record.il }
+    if worn and not wornSet then
+        gear[#gear + 1] = { worn = true, i = 0, it = worn, il = record.il }
     end
     return gear
 end

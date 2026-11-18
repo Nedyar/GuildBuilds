@@ -12,7 +12,7 @@
 ## Notes-zhCN: 在公会名单中显示公会成员的配置：他们的天赋专精（在游戏的天赋窗口中打开）以及与之搭配的装备方案。还可以将你的装备方案与天赋关联。
 ## Notes-zhTW: 在公會名單中顯示公會成員的配置：他們的天賦專精（在遊戲的天賦視窗中開啟）以及與之搭配的裝備設定。還可以將你的裝備設定與天賦關聯。
 ## Author: Nedyar
-## Version: 0.4.0
+## Version: 0.5.0
 ## Dependencies: LibGuildSync
 ## SavedVariables: GuildBuildsDB
 ## IconTexture: Interface\Icons\INV_Misc_Book_11
